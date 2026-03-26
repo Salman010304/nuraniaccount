@@ -230,7 +230,8 @@
             </header>
 
             <!-- Views Container -->
-            <div class="flex-1 overflow-y-auto p-4 sm:p-8 relative scroll-smooth" id="main-scroll-area">
+            <!-- Added pb-24 for mobile scrolling clearance -->
+            <div class="flex-1 overflow-y-auto p-4 sm:p-8 pb-32 relative scroll-smooth" id="main-scroll-area">
                 
                 <!-- Loading Overlay -->
                 <div id="loading-overlay" class="absolute inset-0 bg-slate-50/80 dark:bg-slate-900/80 z-50 hidden items-center justify-center backdrop-blur-sm transition-colors duration-300">
@@ -334,9 +335,10 @@
                                 <i class="fa-brands fa-whatsapp"></i> Send All Reminders
                             </button>
                         </div>
-                        <div class="overflow-x-auto">
+                        <!-- Added max-height for mobile scrollability -->
+                        <div class="overflow-x-auto overflow-y-auto max-h-[65vh]">
                             <table class="w-full text-left text-sm whitespace-nowrap">
-                                <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 font-medium">
+                                <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 font-medium sticky top-0 z-10">
                                     <tr>
                                         <th class="py-3 px-6">Student Name</th>
                                         <th class="py-3 px-6">Pending Months</th>
@@ -390,10 +392,11 @@
                         </div>
                     </div>
 
+                    <!-- Added max-height for mobile scrollability -->
                     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[65vh]">
                             <table class="w-full text-left text-sm whitespace-nowrap">
-                                <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 font-medium">
+                                <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-300 font-medium sticky top-0 z-10 shadow-sm">
                                     <tr>
                                         <th class="py-4 px-6">Name</th>
                                         <th class="py-4 px-6">Teacher</th>
@@ -418,8 +421,10 @@
                         </button>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="teachers-list">
-                        <!-- Populated via JS -->
+                    <div class="overflow-y-auto max-h-[75vh] p-1">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="teachers-list">
+                            <!-- Populated via JS -->
+                        </div>
                     </div>
                 </div>
 
@@ -516,9 +521,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[60vh]">
                             <table class="w-full text-left text-sm whitespace-nowrap">
-                                <thead class="bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold border-y border-slate-200 dark:border-slate-700">
+                                <thead class="bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-bold border-y border-slate-200 dark:border-slate-700 sticky top-0 z-10 shadow-sm">
                                     <tr>
                                         <th class="py-3 px-6 w-32">Date</th>
                                         <th class="py-3 px-6">Description & Mode</th>
@@ -572,12 +577,19 @@
                             </div>
 
                             <!-- Colors -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
-                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Heading/Background Color</label>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Header Background Color</label>
                                     <div class="flex gap-2">
                                         <input type="color" id="setting-bg-color" value="#4f46e5" class="h-10 w-12 rounded cursor-pointer border-0 p-0">
                                         <input type="text" id="setting-bg-color-text" value="#4f46e5" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-500 outline-none" readonly>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Header Text Color</label>
+                                    <div class="flex gap-2">
+                                        <input type="color" id="setting-header-text-color" value="#ffffff" class="h-10 w-12 rounded cursor-pointer border-0 p-0">
+                                        <input type="text" id="setting-header-text-color-text" value="#ffffff" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-500 outline-none" readonly>
                                     </div>
                                 </div>
                                 <div>
@@ -1064,7 +1076,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         // ================= DEFINE GLOBALS EARLY =================
         window.switchView = function(viewId) {
@@ -1245,7 +1256,6 @@
         const app = initializeApp(firebaseConfig); 
         const auth = getAuth(app); 
         const db = getFirestore(app); 
-        const storage = getStorage(app);
         
         window.data = { students: [], teachers: [], transactions: [], settings: {} };
         window.currentUser = null;
@@ -1280,17 +1290,12 @@
         onAuthStateChanged(auth, (user) => {
             const loginView = document.getElementById('login-view');
             const appView = document.getElementById('app-view');
-            const statusEl = document.getElementById('auth-status');
 
             if (user) { 
                 window.currentUser = user; 
                 if(loginView) { loginView.classList.add('hidden'); loginView.classList.remove('flex'); }
                 if(appView) { appView.classList.remove('hidden'); appView.classList.add('flex'); }
                 
-                if(statusEl) {
-                    statusEl.innerHTML = `<i class="fa-solid fa-check-circle"></i> Connected`;
-                    statusEl.className = "text-xs sm:text-sm font-medium px-2 sm:px-3 py-1 bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400 rounded-full flex items-center gap-1 sm:gap-2 whitespace-nowrap border border-green-200 dark:border-green-800";
-                }
                 fetchData(); 
             } else {
                 window.currentUser = null;
@@ -1952,6 +1957,10 @@
                     if (setBg) setBg.value = window.data.settings.headingColor || '#4f46e5';
                     const setBgTxt = document.getElementById('setting-bg-color-text');
                     if (setBgTxt) setBgTxt.value = window.data.settings.headingColor || '#4f46e5';
+                    const setHeadCol = document.getElementById('setting-header-text-color');
+                    if (setHeadCol) setHeadCol.value = window.data.settings.headerTextColor || '#ffffff';
+                    const setHeadColTxt = document.getElementById('setting-header-text-color-text');
+                    if (setHeadColTxt) setHeadColTxt.value = window.data.settings.headerTextColor || '#ffffff';
                     const setCol = document.getElementById('setting-text-color');
                     if (setCol) setCol.value = window.data.settings.textColor || '#323232';
                     const setColTxt = document.getElementById('setting-text-color-text');
@@ -1976,6 +1985,9 @@
         const setBgColor = document.getElementById('setting-bg-color');
         if(setBgColor) setBgColor.addEventListener('input', (e) => document.getElementById('setting-bg-color-text').value = e.target.value);
         
+        const setHeadTextColor = document.getElementById('setting-header-text-color');
+        if(setHeadTextColor) setHeadTextColor.addEventListener('input', (e) => document.getElementById('setting-header-text-color-text').value = e.target.value);
+
         const setTextColor = document.getElementById('setting-text-color');
         if(setTextColor) setTextColor.addEventListener('input', (e) => document.getElementById('setting-text-color-text').value = e.target.value);
         
@@ -2012,6 +2024,7 @@
                 headingText: document.getElementById('setting-heading').value || 'NURANI TUTION CLASSES',
                 subHeadingText: document.getElementById('setting-subheading').value || 'The Step towards Excellence',
                 headingColor: document.getElementById('setting-bg-color').value,
+                headerTextColor: document.getElementById('setting-header-text-color').value || '#ffffff',
                 textColor: document.getElementById('setting-text-color').value,
                 updatedAt: serverTimestamp()
             };
@@ -2030,6 +2043,7 @@
                 const headTxt = settings.headingText || "NURANI TUTION CLASSES";
                 const subHeadTxt = settings.subHeadingText || "The Step towards Excellence";
                 const hColor = window.hexToRgb(settings.headingColor || "#4f46e5");
+                const headerTxtColor = window.hexToRgb(settings.headerTextColor || "#ffffff");
                 const tColor = window.hexToRgb(settings.textColor || "#323232");
 
                 const { jsPDF } = window.jspdf;
@@ -2038,7 +2052,7 @@
                 docPdf.setFillColor(hColor.r, hColor.g, hColor.b); docPdf.rect(0, 0, 210, 40, 'F');
                 if(settings.logoBase64) { docPdf.addImage(settings.logoBase64, 'PNG', 10, 5, 30, 30); }
 
-                docPdf.setTextColor(255, 255, 255); docPdf.setFontSize(22); docPdf.setFont("helvetica", "bold");
+                docPdf.setTextColor(headerTxtColor.r, headerTxtColor.g, headerTxtColor.b); docPdf.setFontSize(22); docPdf.setFont("helvetica", "bold");
                 docPdf.text(headTxt, 105, 20, { align: "center" });
                 docPdf.setFontSize(10); docPdf.text(subHeadTxt, 105, 28, { align: "center" });
 
@@ -2050,7 +2064,7 @@
                 docPdf.text(`Mode: ${fullModeStr}`, 150, 85);
                 
                 docPdf.autoTable({
-                    startY: 100, headStyles: { fillColor: [hColor.r, hColor.g, hColor.b] }, head: [['Description', 'Amount']],
+                    startY: 100, headStyles: { fillColor: [hColor.r, hColor.g, hColor.b], textColor: [headerTxtColor.r, headerTxtColor.g, headerTxtColor.b] }, head: [['Description', 'Amount']],
                     body: [[`Tuition Fees (Month: ${monthName})`, `Rs. ${amount}`], ['Total Paid', `Rs. ${amount}`]],
                     styles: { textColor: [tColor.r, tColor.g, tColor.b] }
                 });
@@ -2075,6 +2089,7 @@
             const headTxt = settings.headingText || "NURANI TUTION CLASSES";
             const subHeadTxt = settings.subHeadingText || "The Step towards Excellence";
             const hColor = window.hexToRgb(settings.headingColor || "#4f46e5");
+            const headerTxtColor = window.hexToRgb(settings.headerTextColor || "#ffffff");
             const tColor = window.hexToRgb(settings.textColor || "#323232");
 
             const { jsPDF } = window.jspdf; const docPdf = new jsPDF();
@@ -2082,7 +2097,7 @@
             docPdf.setFillColor(hColor.r, hColor.g, hColor.b); docPdf.rect(0, 0, 210, 40, 'F');
             if(settings.logoBase64) { docPdf.addImage(settings.logoBase64, 'PNG', 10, 5, 30, 30); }
 
-            docPdf.setTextColor(255, 255, 255); docPdf.setFontSize(22); docPdf.setFont("helvetica", "bold");
+            docPdf.setTextColor(headerTxtColor.r, headerTxtColor.g, headerTxtColor.b); docPdf.setFontSize(22); docPdf.setFont("helvetica", "bold");
             docPdf.text(headTxt, 105, 20, { align: "center" });
             docPdf.setFontSize(10); docPdf.text(subHeadTxt, 105, 28, { align: "center" });
 
@@ -2096,7 +2111,7 @@
 
             const displayMonthName = tx.feeMonth ? new Date(tx.feeMonth + "-01").toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : 'N/A';
             docPdf.autoTable({
-                startY: 105, headStyles: { fillColor: [hColor.r, hColor.g, hColor.b] }, head: [['Description', 'Amount']],
+                startY: 105, headStyles: { fillColor: [hColor.r, hColor.g, hColor.b], textColor: [headerTxtColor.r, headerTxtColor.g, headerTxtColor.b] }, head: [['Description', 'Amount']],
                 body: [[`Tuition Fees (Month: ${displayMonthName})`, `Rs. ${tx.amount}`], ['Total Paid', `Rs. ${tx.amount}`]],
                 styles: { textColor: [tColor.r, tColor.g, tColor.b] }
             });
@@ -2140,6 +2155,7 @@
             const settings = window.data.settings || {};
             const headTxt = settings.headingText || "NURANI TUTION CLASSES";
             const hColor = window.hexToRgb(settings.headingColor || "#4f46e5");
+            const headerTxtColor = window.hexToRgb(settings.headerTextColor || "#ffffff");
 
             const { jsPDF } = window.jspdf; 
             const docPdf = new jsPDF();
@@ -2147,7 +2163,7 @@
             docPdf.setFillColor(hColor.r, hColor.g, hColor.b); docPdf.rect(0, 0, 210, 30, 'F');
             if(settings.logoBase64) { docPdf.addImage(settings.logoBase64, 'PNG', 10, 2, 26, 26); }
 
-            docPdf.setTextColor(255, 255, 255); docPdf.setFontSize(20); docPdf.setFont("helvetica", "bold");
+            docPdf.setTextColor(headerTxtColor.r, headerTxtColor.g, headerTxtColor.b); docPdf.setFontSize(20); docPdf.setFont("helvetica", "bold");
             docPdf.text(headTxt, 105, 18, { align: "center" });
             
             docPdf.setTextColor(50, 50, 50); docPdf.setFontSize(14); 
@@ -2159,7 +2175,7 @@
             docPdf.text(`Sharing Percentage: ${t.share}%`, 20, 68);
 
             docPdf.autoTable({
-                startY: 75, headStyles: { fillColor: [hColor.r, hColor.g, hColor.b] }, 
+                startY: 75, headStyles: { fillColor: [hColor.r, hColor.g, hColor.b], textColor: [headerTxtColor.r, headerTxtColor.g, headerTxtColor.b] }, 
                 head: [['Student Name', 'Student Fee', 'Teacher Share']],
                 body: bodyData.length ? bodyData : [['No students paid', '-', '-']],
                 foot: [['TOTAL EARNED', '', `Rs. ${earned}`]],
@@ -2275,7 +2291,7 @@
 
         window.deleteStudent = async function(id) {
             if(confirm("Are you sure you want to completely remove this student? This action cannot be undone.")) {
-                try { await deleteDoc(doc(db, getColRef('students').path, id)); } catch(e) { console.error("Error deleting", e); }
+                try { await deleteDoc(doc(db, 'students', id)); } catch(e) { console.error("Error deleting", e); }
             }
         };
 
@@ -2453,225 +2469,241 @@
             window.openModal('modal-collect-fee');
         };
 
-        // ================= EVENT LISTENERS =================
-        document.addEventListener('DOMContentLoaded', () => {
-            
-            // Search Student Listener
-            document.getElementById('search-student')?.addEventListener('input', (e) => {
-                const query = e.target.value.toLowerCase();
-                const rows = document.querySelectorAll('#students-list tr');
-                rows.forEach(row => {
-                    const name = row.cells[0].textContent.toLowerCase();
-                    row.style.display = name.includes(query) ? '' : 'none';
-                });
+        // ================= MAIN FORM LOGIC =================
+        
+        // Search Student Listener
+        document.getElementById('search-student')?.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#students-list tr');
+            rows.forEach(row => {
+                const name = row.cells[0].textContent.toLowerCase();
+                row.style.display = name.includes(query) ? '' : 'none';
             });
+        });
 
-            // Confirm Payment Listener
-            document.getElementById('btn-confirm-payment')?.addEventListener('click', async (e) => {
-                const btn = e.target.closest('button');
-                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`; 
-                btn.disabled = true;
+        // Form Submit Listeners - explicitly bound to window to avoid module scope trapping
+        document.getElementById('form-student')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save-student');
+            const origText = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`;
+            btn.disabled = true;
+
+            try {
+                const id = document.getElementById('s-id').value;
+                const teacherSelect = document.getElementById('s-teacher');
+                const selectedTeachers = Array.from(teacherSelect.selectedOptions).map(opt => opt.value).filter(val => val !== '');
                 
-                try {
-                    if (!window.currentFeeProcess || !window.currentFeeProcess.studentId) throw new Error("Missing student data");
-                    
-                    const paymentDateObj = new Date(document.getElementById('fee-date').value);
-                    const selectedMonth = document.getElementById('fee-month').value;
-                    const payMode = document.getElementById('fee-mode').value;
-                    const bankVal = document.getElementById('fee-bank') ? document.getElementById('fee-bank').value : '';
-                    const fullModeStr = payMode === 'Bank/Online' || payMode === 'Bank' ? `Bank (${bankVal || 'Transfer'})` : payMode;
-                    
-                    if (!selectedMonth || !document.getElementById('fee-date').value) throw new Error("Please fill required fields");
-
-                    let receiptNo = `NTC/OFFLINE/${Date.now()}`;
-                    const yr = paymentDateObj.getFullYear(); const mth = paymentDateObj.getMonth() + 1;
-                    const fyStr = `${mth >= 4 ? yr.toString().slice(-2) : (yr - 1).toString().slice(-2)}-${mth >= 4 ? (yr + 1).toString().slice(-2) : yr.toString().slice(-2)}`;
-
-                    let maxSeq = 0;
-                    (window.data.transactions || []).forEach(tx => {
-                        if (tx.receiptNo && tx.receiptNo.includes(`NTC/${fyStr}/`)) {
-                            const seq = parseInt(tx.receiptNo.split('/').pop());
-                            if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
-                        }
-                    });
-                    receiptNo = `NTC/${fyStr}/${String(maxSeq + 1).padStart(3, '0')}`;
-                    const displayMonthName = new Date(selectedMonth + "-01").toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-
-                    // Generate local PDF receipt
-                    window.generateReceipt(
-                        window.currentFeeProcess.studentName,
-                        window.currentFeeProcess.amount,
-                        paymentDateObj.toLocaleDateString('en-IN'),
-                        displayMonthName,
-                        receiptNo,
-                        fullModeStr
-                    );
-
-                    const payload = {
-                        type: 'fee', feeMonth: selectedMonth, studentId: window.currentFeeProcess.studentId, studentName: window.currentFeeProcess.studentName,
-                        amount: window.currentFeeProcess.amount, paymentMode: fullModeStr, 
-                        teacherId: window.currentFeeProcess.teacherId, // Keeps array format
-                        teacherShares: window.currentFeeProcess.teacherShares, // Mapped object of id -> share
-                        teacherShare: window.currentFeeProcess.teacherShare, // Total combined share
-                        instituteProfit: window.currentFeeProcess.profit,
-                        date: paymentDateObj.toISOString(), receiptNo: receiptNo, receiptUrl: ''
-                    };
-
-                    try {
-                        payload.createdAt = serverTimestamp();
-                        await addDoc(collection(db, 'transactions'), payload);
-                        const currentStudent = window.data.students.find(s=>s.id===window.currentFeeProcess.studentId);
-                        if(currentStudent && (!currentStudent.lastPaidMonth || selectedMonth > currentStudent.lastPaidMonth)) {
-                            await updateDoc(doc(db, 'students', window.currentFeeProcess.studentId), { lastPaidMonth: selectedMonth });
-                        }
-                    } catch (firebaseErr) {
-                        console.warn("[PAYMENT] Firebase sync failed, saved locally:", firebaseErr);
-                        let offlineTx = JSON.parse(localStorage.getItem('offline_payments') || '[]');
-                        offlineTx.push(payload);
-                        localStorage.setItem('offline_payments', JSON.stringify(offlineTx));
-                    }
-
-                    // WhatsApp
-                    const settings = window.data?.settings || {};
-                    const headTxt = settings.headingText || "NURANI TUTION CLASSES";
-                    let phoneNum = (window.currentFeeProcess.whatsapp || "").replace(/\D/g, '');
-                    if (phoneNum.length === 10) phoneNum = "91" + phoneNum; 
-                    
-                    const waMsg = `Hello ${window.currentFeeProcess.studentName},\nWe have received your fees of ₹${window.currentFeeProcess.amount} for the month of ${displayMonthName} via ${fullModeStr}. Thank you!\n- ${headTxt}`;
-                    const waUrl = `https://wa.me/${phoneNum}?text=${encodeURIComponent(waMsg)}`;
-                    
-                    window.closeModal('modal-collect-fee');
-                    window.open(waUrl, '_blank');
-
-                } catch(err) {
-                    console.error("[PAYMENT] Error:", err);
-                    alert("Error processing payment: " + err.message);
-                } finally {
-                    btn.innerHTML = `<i class="fa-solid fa-check-circle"></i> Mark as Paid & Generate Receipt`; 
-                    btn.disabled = false;
-                }
-            });
-
-            // Form Submit Listeners
-            document.getElementById('form-student')?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const btn = document.getElementById('btn-save-student');
-                const origText = btn.innerHTML;
-                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`;
-                btn.disabled = true;
-
-                try {
-                    const id = document.getElementById('s-id').value;
-                    const teacherSelect = document.getElementById('s-teacher');
-                    const selectedTeachers = Array.from(teacherSelect.selectedOptions).map(opt => opt.value).filter(val => val !== '');
-                    
-                    const payload = {
-                        name: document.getElementById('s-name').value,
-                        parentName: document.getElementById('s-parent').value,
-                        std: document.getElementById('s-std').value,
-                        board: document.getElementById('s-board').value,
-                        medium: document.getElementById('s-medium').value,
-                        whatsapp: document.getElementById('s-whatsapp').value,
-                        joinDate: document.getElementById('s-joindate').value,
-                        teacherId: selectedTeachers, // Array of selected teachers
-                        monthlyFees: parseFloat(document.getElementById('s-fees').value),
-                        status: 'active'
-                    };
-
-                    if (id) {
-                        payload.updatedAt = serverTimestamp();
-                        await updateDoc(doc(db, 'students', id), payload);
-                    } else {
-                        payload.createdAt = serverTimestamp();
-                        payload.firstMonthFee = window.calculateProratedPreview ? window.calculateProratedPreview() : payload.monthlyFees;
-                        payload.lastPaidMonth = '';
-                        await addDoc(collection(db, 'students'), payload);
-                    }
-                    window.closeModal('modal-add-student');
-                    e.target.reset();
-                } catch (err) {
-                    console.error("[STUDENT] Firebase save failed.", err);
-                    alert("Error saving student.");
-                } finally {
-                    btn.innerHTML = origText;
-                    btn.disabled = false;
-                }
-            });
-
-            document.getElementById('form-teacher')?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const id = document.getElementById('t-id').value;
                 const payload = {
-                    name: document.getElementById('t-name').value,
-                    subject: document.getElementById('t-subject').value,
-                    share: parseFloat(document.getElementById('t-share').value),
-                    whatsapp: document.getElementById('t-whatsapp').value
+                    name: document.getElementById('s-name').value,
+                    parentName: document.getElementById('s-parent').value,
+                    std: document.getElementById('s-std').value,
+                    board: document.getElementById('s-board').value,
+                    medium: document.getElementById('s-medium').value,
+                    whatsapp: document.getElementById('s-whatsapp').value,
+                    joinDate: document.getElementById('s-joindate').value,
+                    teacherId: selectedTeachers, // Array of selected teachers
+                    monthlyFees: parseFloat(document.getElementById('s-fees').value),
+                    status: 'active'
                 };
+
                 if (id) {
                     payload.updatedAt = serverTimestamp();
-                    await updateDoc(doc(db, 'teachers', id), payload);
+                    await updateDoc(doc(db, 'students', id), payload);
                 } else {
                     payload.createdAt = serverTimestamp();
-                    await addDoc(collection(db, 'teachers'), payload);
+                    payload.firstMonthFee = window.calculateProratedPreview ? window.calculateProratedPreview() : payload.monthlyFees;
+                    payload.lastPaidMonth = '';
+                    await addDoc(collection(db, 'students'), payload);
                 }
-                window.closeModal('modal-add-teacher');
+                window.closeModal('modal-add-student');
                 e.target.reset();
-            });
-
-            document.getElementById('form-expense')?.addEventListener('submit', async (e) => {
-                e.preventDefault();
+            } catch (err) {
+                console.error("[STUDENT] Firebase save failed.", err);
+                
+                // LocalStorage Fallback logic
+                const teacherSelect = document.getElementById('s-teacher');
+                const selectedTeachers = Array.from(teacherSelect.selectedOptions).map(opt => opt.value).filter(v => v !== '');
                 const payload = {
-                    type: 'expense', description: document.getElementById('e-desc').value,
-                    amount: parseFloat(document.getElementById('e-amount').value),
-                    paymentMode: document.getElementById('e-mode').value, date: new Date().toISOString(),
-                    createdAt: serverTimestamp()
+                    name: document.getElementById('s-name').value,
+                    whatsapp: document.getElementById('s-whatsapp').value,
+                    teacherId: selectedTeachers,
+                    monthlyFees: parseFloat(document.getElementById('s-fees').value),
+                    status: 'active',
+                    id: 'local_' + Date.now()
                 };
-                await addDoc(collection(db, 'transactions'), payload);
-                window.closeModal('modal-add-expense');
+                let offlineStudents = JSON.parse(localStorage.getItem('offline_students') || '[]');
+                offlineStudents.push(payload);
+                localStorage.setItem('offline_students', JSON.stringify(offlineStudents));
+                
+                alert("Network error: Saved locally (Offline Mode)!");
+                window.closeModal('modal-add-student');
                 e.target.reset();
-            });
+            } finally {
+                btn.innerHTML = origText;
+                btn.disabled = false;
+            }
+        });
 
-            document.getElementById('form-asset')?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const payload = {
-                    type: 'asset', description: document.getElementById('a-desc').value,
-                    amount: parseFloat(document.getElementById('a-amount').value),
-                    paymentMode: document.getElementById('a-mode').value, date: new Date().toISOString(),
-                    createdAt: serverTimestamp()
-                };
-                await addDoc(collection(db, 'transactions'), payload);
-                window.closeModal('modal-add-asset');
-                e.target.reset();
-            });
+        document.getElementById('form-teacher')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('t-id').value;
+            const payload = {
+                name: document.getElementById('t-name').value,
+                subject: document.getElementById('t-subject').value,
+                share: parseFloat(document.getElementById('t-share').value),
+                whatsapp: document.getElementById('t-whatsapp').value
+            };
+            if (id) {
+                payload.updatedAt = serverTimestamp();
+                await updateDoc(doc(db, 'teachers', id), payload);
+            } else {
+                payload.createdAt = serverTimestamp();
+                await addDoc(collection(db, 'teachers'), payload);
+            }
+            window.closeModal('modal-add-teacher');
+            e.target.reset();
+        });
 
-            document.getElementById('form-pay-teacher')?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const payMode = document.getElementById('pt-mode').value;
-                const bankVal = document.getElementById('pt-bank').value;
+        document.getElementById('form-expense')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                type: 'expense', description: document.getElementById('e-desc').value,
+                amount: parseFloat(document.getElementById('e-amount').value),
+                paymentMode: document.getElementById('e-mode').value, date: new Date().toISOString(),
+                createdAt: serverTimestamp()
+            };
+            await addDoc(collection(db, 'transactions'), payload);
+            window.closeModal('modal-add-expense');
+            e.target.reset();
+        });
+
+        document.getElementById('form-asset')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                type: 'asset', description: document.getElementById('a-desc').value,
+                amount: parseFloat(document.getElementById('a-amount').value),
+                paymentMode: document.getElementById('a-mode').value, date: new Date().toISOString(),
+                createdAt: serverTimestamp()
+            };
+            await addDoc(collection(db, 'transactions'), payload);
+            window.closeModal('modal-add-asset');
+            e.target.reset();
+        });
+
+        document.getElementById('form-pay-teacher')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payMode = document.getElementById('pt-mode').value;
+            const bankVal = document.getElementById('pt-bank').value;
+            const fullModeStr = payMode === 'Bank/Online' || payMode === 'Bank' ? `Bank (${bankVal || 'Transfer'})` : payMode;
+            const payload = {
+                type: 'teacher_payout', teacherId: document.getElementById('pt-id').value,
+                amount: parseFloat(document.getElementById('pt-amount').value),
+                paymentMode: fullModeStr, date: new Date().toISOString(), createdAt: serverTimestamp()
+            };
+            await addDoc(collection(db, 'transactions'), payload);
+            window.closeModal('modal-pay-teacher');
+            e.target.reset();
+        });
+
+        document.getElementById('form-edit-tx')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                description: document.getElementById('etx-desc').value,
+                amount: parseFloat(document.getElementById('etx-amount').value),
+                date: new Date(document.getElementById('etx-date').value).toISOString(),
+                paymentMode: document.getElementById('etx-mode').value,
+                updatedAt: serverTimestamp()
+            };
+            await updateDoc(doc(db, 'transactions', document.getElementById('etx-id').value), payload);
+            window.closeModal('modal-edit-tx');
+            e.target.reset();
+        });
+
+        // Confirm Payment Listener
+        document.getElementById('btn-confirm-payment')?.addEventListener('click', async (e) => {
+            const btn = e.target.closest('button');
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`; 
+            btn.disabled = true;
+            
+            try {
+                if (!window.currentFeeProcess || !window.currentFeeProcess.studentId) throw new Error("Missing student data");
+                
+                const paymentDateObj = new Date(document.getElementById('fee-date').value);
+                const selectedMonth = document.getElementById('fee-month').value;
+                const payMode = document.getElementById('fee-mode').value;
+                const bankVal = document.getElementById('fee-bank') ? document.getElementById('fee-bank').value : '';
                 const fullModeStr = payMode === 'Bank/Online' || payMode === 'Bank' ? `Bank (${bankVal || 'Transfer'})` : payMode;
-                const payload = {
-                    type: 'teacher_payout', teacherId: document.getElementById('pt-id').value,
-                    amount: parseFloat(document.getElementById('pt-amount').value),
-                    paymentMode: fullModeStr, date: new Date().toISOString(), createdAt: serverTimestamp()
-                };
-                await addDoc(collection(db, 'transactions'), payload);
-                window.closeModal('modal-pay-teacher');
-                e.target.reset();
-            });
+                
+                if (!selectedMonth || !document.getElementById('fee-date').value) throw new Error("Please fill required fields");
 
-            document.getElementById('form-edit-tx')?.addEventListener('submit', async (e) => {
-                e.preventDefault();
+                let receiptNo = `NTC/OFFLINE/${Date.now()}`;
+                const yr = paymentDateObj.getFullYear(); const mth = paymentDateObj.getMonth() + 1;
+                const fyStr = `${mth >= 4 ? yr.toString().slice(-2) : (yr - 1).toString().slice(-2)}-${mth >= 4 ? (yr + 1).toString().slice(-2) : yr.toString().slice(-2)}`;
+
+                let maxSeq = 0;
+                (window.data.transactions || []).forEach(tx => {
+                    if (tx.receiptNo && tx.receiptNo.includes(`NTC/${fyStr}/`)) {
+                        const seq = parseInt(tx.receiptNo.split('/').pop());
+                        if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+                    }
+                });
+                receiptNo = `NTC/${fyStr}/${String(maxSeq + 1).padStart(3, '0')}`;
+                const displayMonthName = new Date(selectedMonth + "-01").toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+                // Generate local PDF receipt
+                window.generateReceipt(
+                    window.currentFeeProcess.studentName,
+                    window.currentFeeProcess.amount,
+                    paymentDateObj.toLocaleDateString('en-IN'),
+                    displayMonthName,
+                    receiptNo,
+                    fullModeStr
+                );
+
                 const payload = {
-                    description: document.getElementById('etx-desc').value,
-                    amount: parseFloat(document.getElementById('etx-amount').value),
-                    date: new Date(document.getElementById('etx-date').value).toISOString(),
-                    paymentMode: document.getElementById('etx-mode').value,
-                    updatedAt: serverTimestamp()
+                    type: 'fee', feeMonth: selectedMonth, studentId: window.currentFeeProcess.studentId, studentName: window.currentFeeProcess.studentName,
+                    amount: window.currentFeeProcess.amount, paymentMode: fullModeStr, 
+                    teacherId: window.currentFeeProcess.teacherId, // Keeps array format
+                    teacherShares: window.currentFeeProcess.teacherShares, // Mapped object of id -> share
+                    teacherShare: window.currentFeeProcess.teacherShare, // Total combined share
+                    instituteProfit: window.currentFeeProcess.profit,
+                    date: paymentDateObj.toISOString(), receiptNo: receiptNo, receiptUrl: ''
                 };
-                await updateDoc(doc(db, 'transactions', document.getElementById('etx-id').value), payload);
-                window.closeModal('modal-edit-tx');
-                e.target.reset();
-            });
+
+                try {
+                    payload.createdAt = serverTimestamp();
+                    await addDoc(collection(db, 'transactions'), payload);
+                    const currentStudent = window.data.students.find(s=>s.id===window.currentFeeProcess.studentId);
+                    if(currentStudent && (!currentStudent.lastPaidMonth || selectedMonth > currentStudent.lastPaidMonth)) {
+                        await updateDoc(doc(db, 'students', window.currentFeeProcess.studentId), { lastPaidMonth: selectedMonth });
+                    }
+                } catch (firebaseErr) {
+                    console.warn("[PAYMENT] Firebase sync failed, saved locally:", firebaseErr);
+                    let offlineTx = JSON.parse(localStorage.getItem('offline_payments') || '[]');
+                    offlineTx.push(payload);
+                    localStorage.setItem('offline_payments', JSON.stringify(offlineTx));
+                }
+
+                // WhatsApp
+                const settings = window.data?.settings || {};
+                const headTxt = settings.headingText || "NURANI TUTION CLASSES";
+                let phoneNum = (window.currentFeeProcess.whatsapp || "").replace(/\D/g, '');
+                if (phoneNum.length === 10) phoneNum = "91" + phoneNum; 
+                
+                const waMsg = `Hello ${window.currentFeeProcess.studentName},\nWe have received your fees of ₹${window.currentFeeProcess.amount} for the month of ${displayMonthName} via ${fullModeStr}. Thank you!\n- ${headTxt}`;
+                const waUrl = `https://wa.me/${phoneNum}?text=${encodeURIComponent(waMsg)}`;
+                
+                window.closeModal('modal-collect-fee');
+                window.open(waUrl, '_blank');
+
+            } catch(err) {
+                console.error("[PAYMENT] Error:", err);
+                alert("Error processing payment: " + err.message);
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-check-circle"></i> Mark as Paid & Generate Receipt`; 
+                btn.disabled = false;
+            }
         });
 
     </script>
