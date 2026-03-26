@@ -39,6 +39,16 @@
         } else {
             document.documentElement.classList.remove('dark');
         }
+        
+        // --- PWA Service Worker (Fixed Blob Protocol Error) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Attempt to register a standard Service Worker file instead of a blocked Blob URL
+                navigator.serviceWorker.register('./sw.js').catch(err => {
+                    console.log('PWA Service Worker skipped: A standard sw.js file is required for full offline mode.');
+                });
+            });
+        }
     </script>
     <style>
         /* Custom scrollbar for a polished look */
@@ -546,21 +556,45 @@
                     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden max-w-3xl mx-auto">
                         <div class="p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
                             <h3 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-file-invoice mr-2 text-indigo-500"></i> Global Settings</h3>
-                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Customize logo, heading, colors, and manage application data.</p>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Customize logo, signature, colors, and manage application data.</p>
                         </div>
                         <form id="form-settings" class="p-6 space-y-6">
-                            <!-- Logo Upload -->
+                            
+                            <!-- Logo & Signature Upload -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Class Logo & App Icon</label>
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-16 h-16 rounded border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-50 dark:bg-slate-900 overflow-hidden shrink-0">
+                                            <img id="setting-logo-preview" src="" class="w-full h-full object-contain hidden">
+                                            <i id="setting-logo-icon" class="fa-solid fa-image text-slate-400 text-2xl"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <input type="file" id="setting-logo-input" accept="image/png, image/jpeg" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/50 dark:file:text-indigo-300 cursor-pointer">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Digital Signature (Optional)</label>
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-24 h-16 rounded border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-50 dark:bg-slate-900 overflow-hidden shrink-0">
+                                            <img id="setting-signature-preview" src="" class="w-full h-full object-contain hidden">
+                                            <i id="setting-signature-icon" class="fa-solid fa-signature text-slate-400 text-2xl"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <input type="file" id="setting-signature-input" accept="image/png" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/50 dark:file:text-indigo-300 cursor-pointer">
+                                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Upload transparent PNG signature.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Opacity Slider -->
                             <div>
-                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Class Logo & App Icon (Optional)</label>
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Watermark Logo Opacity (%)</label>
                                 <div class="flex items-center gap-4">
-                                    <div class="w-16 h-16 rounded border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-50 dark:bg-slate-900 overflow-hidden shrink-0">
-                                        <img id="setting-logo-preview" src="" class="w-full h-full object-contain hidden">
-                                        <i id="setting-logo-icon" class="fa-solid fa-image text-slate-400 text-2xl"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <input type="file" id="setting-logo-input" accept="image/png, image/jpeg" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/50 dark:file:text-indigo-300 cursor-pointer">
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Select PNG/JPG. This appears on receipts and acts as the app's install icon.</p>
-                                    </div>
+                                    <input type="range" id="setting-logo-opacity" min="1" max="100" value="10" class="w-full accent-primary" oninput="document.getElementById('opacity-val').innerText = this.value + '%'">
+                                    <span id="opacity-val" class="text-sm font-bold text-indigo-600 dark:text-indigo-400 w-12">10%</span>
                                 </div>
                             </div>
                             
@@ -776,14 +810,21 @@
                         </select>
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2 sm:col-span-1">
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="col-span-3 sm:col-span-1">
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">WhatsApp Number</label>
                         <input type="tel" id="s-whatsapp" required placeholder="e.g. 919876543210" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
                     </div>
-                    <div class="col-span-2 sm:col-span-1">
+                    <div class="col-span-3 sm:col-span-1">
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Join Date</label>
                         <input type="date" id="s-joindate" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                    </div>
+                    <div class="col-span-3 sm:col-span-1">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Study Mode</label>
+                        <select id="s-study-mode" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                            <option value="Offline">Offline</option>
+                            <option value="Online">Online</option>
+                        </select>
                     </div>
                 </div>
                 <div>
@@ -1076,6 +1117,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         // ================= DEFINE GLOBALS EARLY =================
         window.switchView = function(viewId) {
@@ -1118,6 +1160,7 @@
                 if(btn) btn.innerText = 'Admit Student';
                 const pBox = document.getElementById('prorated-box');
                 if(pBox) pBox.classList.add('hidden');
+                document.getElementById('s-study-mode').value = 'Offline'; // default
             }
             if(reset && id === 'modal-add-teacher') {
                 const ft = document.getElementById('form-teacher');
@@ -1256,6 +1299,7 @@
         const app = initializeApp(firebaseConfig); 
         const auth = getAuth(app); 
         const db = getFirestore(app); 
+        const storage = getStorage(app);
         
         window.data = { students: [], teachers: [], transactions: [], settings: {} };
         window.currentUser = null;
@@ -1443,9 +1487,9 @@
                 let csvContent = "data:text/csv;charset=utf-8,";
                 
                 csvContent += "--- STUDENTS ---\n";
-                csvContent += "Name,Standard,Board,Medium,WhatsApp,Monthly Fees\n";
+                csvContent += "Name,Standard,Board,Medium,Study Mode,WhatsApp,Monthly Fees\n";
                 (window.data.students || []).forEach(s => {
-                    csvContent += `${s.name || ''},${s.std || ''},${s.board || ''},${s.medium || ''},${s.whatsapp || ''},${s.monthlyFees || 0}\n`;
+                    csvContent += `${s.name || ''},${s.std || ''},${s.board || ''},${s.medium || ''},${s.studyMode || 'Offline'},${s.whatsapp || ''},${s.monthlyFees || 0}\n`;
                 });
                 
                 csvContent += "\n--- ALL TRANSACTIONS ---\n";
@@ -1604,11 +1648,13 @@
 
                 let statusHtml = dueData.months === 0 ? `<span class="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400 px-2 py-1 rounded text-xs font-bold block mb-1 text-center"><i class="fa-solid fa-check mr-1"></i> Paid</span>` : `<span class="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400 px-2 py-1 rounded text-xs font-bold block mb-1 text-center shadow-sm border border-red-200 dark:border-red-800"><i class="fa-solid fa-clock mr-1"></i> ${dueData.months} Mo. Due</span>`;
                 const dueText = dueData.months > 0 ? `<p class="text-xs text-red-600 dark:text-red-400 font-bold text-center mt-1">Total: ₹${dueData.amt}</p>` : `<p class="text-xs text-green-600 dark:text-green-400 font-bold text-center mt-1">No Dues</p>`;
+                
+                const studyModeLabel = s.studyMode === 'Online' ? `<span class="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1 rounded ml-1">Online</span>` : '';
 
                 list.innerHTML += `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
                         <td class="py-3 px-6">
-                            <p class="font-bold text-slate-800 dark:text-slate-100">${s.name}</p>
+                            <p class="font-bold text-slate-800 dark:text-slate-100">${s.name} ${studyModeLabel}</p>
                             <p class="text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 inline-block px-1 rounded mt-0.5">${[s.std, s.board, s.medium].filter(Boolean).join(' | ')}</p>
                         </td>
                         <td class="py-3 px-6 text-slate-600 dark:text-slate-400">${teacherNames}</td>
@@ -1976,6 +2022,19 @@
                         if(iconImg) iconImg.classList.add('hidden');
                         window.updateDynamicManifest(window.data.settings.logoBase64, window.data.settings.headingText);
                     }
+                    const prevSig = document.getElementById('setting-signature-preview');
+                    const iconSig = document.getElementById('setting-signature-icon');
+                    if(window.data.settings.signatureBase64) {
+                        if(prevSig) { prevSig.src = window.data.settings.signatureBase64; prevSig.classList.remove('hidden'); }
+                        if(iconSig) iconSig.classList.add('hidden');
+                    }
+                    const setOpacity = document.getElementById('setting-logo-opacity');
+                    const opacityVal = document.getElementById('opacity-val');
+                    if (setOpacity) {
+                        const opVal = window.data.settings.logoOpacity !== undefined ? Math.round(window.data.settings.logoOpacity * 100) : 15;
+                        setOpacity.value = opVal;
+                        if(opacityVal) opacityVal.innerText = opVal + '%';
+                    }
                 }
                 checkInitialLoading();
             }, handleDbError);
@@ -2018,6 +2077,34 @@
                 reader.readAsDataURL(file);
             });
         }
+        
+        let tempSignatureBase64 = null;
+        const setSignatureInput = document.getElementById('setting-signature-input');
+        if(setSignatureInput) {
+            setSignatureInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 300;
+                        const scaleSize = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        tempSignatureBase64 = canvas.toDataURL('image/png', 0.9);
+                        const pImg = document.getElementById('setting-signature-preview');
+                        if(pImg) { pImg.src = tempSignatureBase64; pImg.classList.remove('hidden'); }
+                        const iconImg = document.getElementById('setting-signature-icon');
+                        if(iconImg) iconImg.classList.add('hidden');
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
 
         window.saveGlobalSettings = async function() {
             const payload = {
@@ -2026,9 +2113,11 @@
                 headingColor: document.getElementById('setting-bg-color').value,
                 headerTextColor: document.getElementById('setting-header-text-color').value || '#ffffff',
                 textColor: document.getElementById('setting-text-color').value,
+                logoOpacity: parseFloat(document.getElementById('setting-logo-opacity').value) / 100 || 0.15,
                 updatedAt: serverTimestamp()
             };
             if(tempLogoBase64) payload.logoBase64 = tempLogoBase64;
+            if(tempSignatureBase64) payload.signatureBase64 = tempSignatureBase64;
             
             try {
                 await setDoc(doc(db, getColRef('settings').path, 'global'), payload, {merge: true});
@@ -2037,10 +2126,10 @@
         };
 
         // ================= PDF GENERATION =================
-        window.generateReceipt = function(studentName, amount, dateStr, monthName, receiptNo, fullModeStr) {
+        window.generateReceipt = async function(studentName, parentName, mobile, classDetails, studyMode, amount, dateStr, monthName, receiptNo, fullModeStr) {
             try {
                 const settings = window.data.settings || {};
-                const headTxt = settings.headingText || "NURANI TUTION CLASSES";
+                const headTxt = settings.headingText || "NURANI TUITION CLASSES";
                 const subHeadTxt = settings.subHeadingText || "The Step towards Excellence";
                 const hColor = window.hexToRgb(settings.headingColor || "#4f46e5");
                 const headerTxtColor = window.hexToRgb(settings.headerTextColor || "#ffffff");
@@ -2049,44 +2138,156 @@
                 const { jsPDF } = window.jspdf;
                 const docPdf = new jsPDF();
                 
-                docPdf.setFillColor(hColor.r, hColor.g, hColor.b); docPdf.rect(0, 0, 210, 40, 'F');
-                if(settings.logoBase64) { docPdf.addImage(settings.logoBase64, 'PNG', 10, 5, 30, 30); }
-
-                docPdf.setTextColor(headerTxtColor.r, headerTxtColor.g, headerTxtColor.b); docPdf.setFontSize(22); docPdf.setFont("helvetica", "bold");
-                docPdf.text(headTxt, 105, 20, { align: "center" });
-                docPdf.setFontSize(10); docPdf.text(subHeadTxt, 105, 28, { align: "center" });
-
-                docPdf.setTextColor(tColor.r, tColor.g, tColor.b); docPdf.setFontSize(16); docPdf.text("FEE RECEIPT", 105, 55, { align: "center" });
+                // 1. Draw Header Background
+                docPdf.setFillColor(hColor.r, hColor.g, hColor.b); 
+                docPdf.rect(0, 0, 210, 45, 'F');
                 
-                docPdf.setFontSize(11); docPdf.setFont("helvetica", "normal");
-                docPdf.text(`Receipt No: ${receiptNo}`, 20, 70); docPdf.text(`Date: ${dateStr}`, 150, 70);
-                docPdf.text(`Student: ${studentName}`, 20, 85);
-                docPdf.text(`Mode: ${fullModeStr}`, 150, 85);
+                // 2. High Quality Logo & Watermark
+                if(settings.logoBase64) { 
+                    // Header Logo (Top Left) - Disable compression for clarity
+                    docPdf.addImage(settings.logoBase64, 'PNG', 10, 5, 35, 35, '', 'NONE');
+                    
+                    // Watermark Logo (Center)
+                    const op = settings.logoOpacity !== undefined ? settings.logoOpacity : 0.15;
+                    docPdf.setGState(new docPdf.GState({opacity: op}));
+                    docPdf.addImage(settings.logoBase64, 'PNG', 45, 90, 120, 120, '', 'NONE');
+                    docPdf.setGState(new docPdf.GState({opacity: 1.0})); // Reset
+                }
+
+                // 3. Professional Header (Adjust center if logo exists)
+                const titleX = settings.logoBase64 ? 115 : 105;
+                docPdf.setTextColor(headerTxtColor.r, headerTxtColor.g, headerTxtColor.b); 
+                docPdf.setFontSize(22); 
+                docPdf.setFont("helvetica", "bold");
+                docPdf.text(headTxt, titleX, 22, { align: "center" });
                 
+                docPdf.setTextColor(240, 240, 240); 
+                docPdf.setFontSize(10); 
+                docPdf.setFont("helvetica", "italic");
+                docPdf.text(subHeadTxt, titleX, 30, { align: "center" });
+
+                // 4. Receipt Title & Formatted Number
+                docPdf.setTextColor(tColor.r, tColor.g, tColor.b); 
+                docPdf.setFontSize(14); 
+                docPdf.setFont("helvetica", "bold");
+                docPdf.text("FEE RECEIPT", 105, 55, { align: "center" });
+                
+                docPdf.setLineWidth(0.5);
+                docPdf.setDrawColor(hColor.r, hColor.g, hColor.b);
+                docPdf.line(90, 57, 120, 57);
+
+                docPdf.setFontSize(12);
+                docPdf.setTextColor(220, 38, 38); // Distinct red color for receipt number
+                docPdf.text(`Receipt No: ${receiptNo}`, 105, 65, { align: "center" });
+
+                // 5. Two-Column Student Details
+                docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
+                docPdf.setFontSize(10); 
+                
+                const leftCol = 15;
+                const rightCol = 120;
+                const valOffset = 32; 
+                let currentY = 75;
+                const lineSpacing = 8;
+
+                docPdf.setFont("helvetica", "bold"); docPdf.text("Student Name:", leftCol, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(studentName, leftCol + valOffset, currentY);
+                
+                docPdf.setFont("helvetica", "bold"); docPdf.text("Date:", rightCol, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(dateStr, rightCol + 28, currentY);
+
+                currentY += lineSpacing;
+                docPdf.setFont("helvetica", "bold"); docPdf.text("Parent Name:", leftCol, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(parentName || 'N/A', leftCol + valOffset, currentY);
+                
+                docPdf.setFont("helvetica", "bold"); docPdf.text("Study Mode:", rightCol, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(studyMode || 'OFFLINE', rightCol + 28, currentY);
+
+                currentY += lineSpacing;
+                docPdf.setFont("helvetica", "bold"); docPdf.text("Standard/Class:", leftCol, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(classDetails || 'N/A', leftCol + valOffset, currentY);
+                
+                docPdf.setFont("helvetica", "bold"); docPdf.text("Payment Mode:", rightCol, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(fullModeStr, rightCol + 28, currentY);
+
+                currentY += lineSpacing;
+                docPdf.setFont("helvetica", "bold"); docPdf.text("Mobile No:", leftCol, currentY); 
+                docPdf.setFont("helvetica", "normal"); docPdf.text(mobile || 'N/A', leftCol + valOffset, currentY);
+
+                // 6. Structured Grid Table
                 docPdf.autoTable({
-                    startY: 100, headStyles: { fillColor: [hColor.r, hColor.g, hColor.b], textColor: [headerTxtColor.r, headerTxtColor.g, headerTxtColor.b] }, head: [['Description', 'Amount']],
-                    body: [[`Tuition Fees (Month: ${monthName})`, `Rs. ${amount}`], ['Total Paid', `Rs. ${amount}`]],
-                    styles: { textColor: [tColor.r, tColor.g, tColor.b] }
+                    startY: currentY + 10, 
+                    headStyles: { fillColor: [hColor.r, hColor.g, hColor.b], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, 
+                    head: [['S.No', 'Description', 'Month', 'Amount (INR)']],
+                    body: [['1', 'Tuition Fees', monthName, amount.toString()]],
+                    foot: [['', 'TOTAL AMOUNT', '', `Rs. ${amount.toString()}`]],
+                    footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+                    theme: 'grid',
+                    columnStyles: {
+                        0: { halign: 'center', cellWidth: 15 },
+                        2: { halign: 'center', cellWidth: 40 },
+                        3: { halign: 'right', cellWidth: 40 }
+                    },
+                    styles: { textColor: [tColor.r, tColor.g, tColor.b], fontSize: 10, cellPadding: 4 }
                 });
                 
+                const finalY = docPdf.lastAutoTable.finalY + 15;
+
+                // 7. QR Code (Dynamic API implementation)
+                try {
+                    const qrData = encodeURIComponent(`No:${receiptNo}|Name:${studentName}|Amt:${amount}`);
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous";
+                    img.src = qrUrl;
+                    await new Promise((resolve) => {
+                        img.onload = () => {
+                            docPdf.addImage(img, 'PNG', 15, finalY, 30, 30);
+                            resolve();
+                        };
+                        img.onerror = () => resolve(); // Skip if fails to maintain backwards compatibility
+                    });
+                } catch (qrErr) { console.warn("QR Code Generation Skipped"); }
+
+                // 8. Footer & Digital Signature
                 docPdf.setFontSize(10);
-                const sigY = docPdf.lastAutoTable.finalY + 20;
-                docPdf.setFont("helvetica", "bold"); docPdf.text(`For ${headTxt}`, 130, sigY);
-                docPdf.setFont("helvetica", "normal"); docPdf.text("S/d", 130, sigY + 6);
-                docPdf.text("TAHURA SALMAN MEMAN", 130, sigY + 12);
-                docPdf.text("Authorized Signatory", 130, sigY + 18);
+                docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
+                docPdf.setFont("helvetica", "bold"); 
+                docPdf.text(`For ${headTxt}`, 160, finalY + 10, { align: "center" });
+                
+                if (settings.signatureBase64) {
+                    docPdf.addImage(settings.signatureBase64, 'PNG', 140, finalY + 12, 40, 15, '', 'NONE');
+                } else {
+                    docPdf.setTextColor(hColor.r, hColor.g, hColor.b);
+                    docPdf.setFont("helvetica", "italic"); 
+                    docPdf.setFontSize(14);
+                    docPdf.text("Digital Signature", 160, finalY + 22, { align: "center" });
+                    docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
+                }
+                
+                docPdf.setFontSize(10);
+                docPdf.setFont("helvetica", "normal"); 
+                docPdf.text("Authorized Signatory", 160, finalY + 32, { align: "center" });
+
+                docPdf.setFontSize(8);
+                docPdf.setTextColor(150, 150, 150);
+                docPdf.text("This is a digitally generated document and does not require a physical signature.", 105, 285, { align: "center" });
                 
                 docPdf.save(`${receiptNo.replace(/\//g, '_')}.pdf`);
             } catch(e) { console.error("[PDF] Generate Error", e); }
         };
 
-        window.reGenerateReceipt = function(txId, action) {
+        window.reGenerateReceipt = async function(txId, action) {
             const tx = window.data.transactions.find(t => t.id === txId);
             if(!tx) return;
             const student = window.data.students.find(s => s.id === tx.studentId);
+            const parentName = student?.parentName || 'N/A';
+            const mobile = student?.whatsapp || 'N/A';
+            const classDetails = `${student?.std || ''} ${student?.board || ''} ${student?.medium || ''}`.trim() || 'N/A';
+            const studyMode = student?.studyMode || 'OFFLINE';
             
             const settings = window.data.settings || {};
-            const headTxt = settings.headingText || "NURANI TUTION CLASSES";
+            const headTxt = settings.headingText || "NURANI TUITION CLASSES";
             const subHeadTxt = settings.subHeadingText || "The Step towards Excellence";
             const hColor = window.hexToRgb(settings.headingColor || "#4f46e5");
             const headerTxtColor = window.hexToRgb(settings.headerTextColor || "#ffffff");
@@ -2094,34 +2295,139 @@
 
             const { jsPDF } = window.jspdf; const docPdf = new jsPDF();
             
-            docPdf.setFillColor(hColor.r, hColor.g, hColor.b); docPdf.rect(0, 0, 210, 40, 'F');
-            if(settings.logoBase64) { docPdf.addImage(settings.logoBase64, 'PNG', 10, 5, 30, 30); }
-
-            docPdf.setTextColor(headerTxtColor.r, headerTxtColor.g, headerTxtColor.b); docPdf.setFontSize(22); docPdf.setFont("helvetica", "bold");
-            docPdf.text(headTxt, 105, 20, { align: "center" });
-            docPdf.setFontSize(10); docPdf.text(subHeadTxt, 105, 28, { align: "center" });
-
-            docPdf.setTextColor(tColor.r, tColor.g, tColor.b); docPdf.setFontSize(16); docPdf.text("FEE RECEIPT", 105, 55, { align: "center" });
-            docPdf.setFontSize(11); docPdf.setFont("helvetica", "normal");
-            docPdf.text(`Receipt No: ${tx.receiptNo || 'N/A'}`, 20, 70); docPdf.text(`Date: ${new Date(tx.date).toLocaleDateString('en-IN')}`, 150, 70);
+            // 1. Background Header
+            docPdf.setFillColor(hColor.r, hColor.g, hColor.b); 
+            docPdf.rect(0, 0, 210, 45, 'F');
             
-            docPdf.text(`Student Name: ${tx.studentName}`, 20, 85);
-            docPdf.text(`Class Details: ${student?.std || 'N/A'} | ${student?.board || ''} | ${student?.medium || ''}`, 20, 95);
-            docPdf.text(`Payment Mode: ${tx.paymentMode}`, 150, 95);
+            // 2. High Quality Logo & Watermark
+            if(settings.logoBase64) { 
+                docPdf.addImage(settings.logoBase64, 'PNG', 10, 5, 35, 35, '', 'NONE');
+                const op = settings.logoOpacity !== undefined ? settings.logoOpacity : 0.15;
+                docPdf.setGState(new docPdf.GState({opacity: op}));
+                docPdf.addImage(settings.logoBase64, 'PNG', 45, 90, 120, 120, '', 'NONE');
+                docPdf.setGState(new docPdf.GState({opacity: 1.0}));
+            }
+
+            // 3. Professional Header
+            const titleX = settings.logoBase64 ? 115 : 105;
+            docPdf.setTextColor(headerTxtColor.r, headerTxtColor.g, headerTxtColor.b); 
+            docPdf.setFontSize(22); 
+            docPdf.setFont("helvetica", "bold");
+            docPdf.text(headTxt, titleX, 22, { align: "center" });
+            
+            docPdf.setTextColor(240, 240, 240); 
+            docPdf.setFontSize(10); 
+            docPdf.setFont("helvetica", "italic");
+            docPdf.text(subHeadTxt, titleX, 30, { align: "center" });
+
+            // 4. Receipt Title
+            docPdf.setTextColor(tColor.r, tColor.g, tColor.b); 
+            docPdf.setFontSize(14); 
+            docPdf.setFont("helvetica", "bold");
+            docPdf.text("FEE RECEIPT", 105, 55, { align: "center" });
+            docPdf.setLineWidth(0.5);
+            docPdf.setDrawColor(hColor.r, hColor.g, hColor.b);
+            docPdf.line(90, 57, 120, 57);
+
+            // Formatted Receipt No
+            docPdf.setFontSize(12);
+            docPdf.setTextColor(220, 38, 38);
+            docPdf.text(`Receipt No: ${tx.receiptNo || 'N/A'}`, 105, 65, { align: "center" });
+
+            // 5. Two-Column Details
+            docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
+            docPdf.setFontSize(10); 
+            
+            const leftCol = 15;
+            const rightCol = 120;
+            const valOffset = 32; 
+            let currentY = 75;
+            const lineSpacing = 8;
+
+            docPdf.setFont("helvetica", "bold"); docPdf.text("Student Name:", leftCol, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(tx.studentName, leftCol + valOffset, currentY);
+            
+            docPdf.setFont("helvetica", "bold"); docPdf.text("Date:", rightCol, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(new Date(tx.date).toLocaleDateString('en-IN'), rightCol + 28, currentY);
+
+            currentY += lineSpacing;
+            docPdf.setFont("helvetica", "bold"); docPdf.text("Parent Name:", leftCol, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(parentName, leftCol + valOffset, currentY);
+            
+            docPdf.setFont("helvetica", "bold"); docPdf.text("Study Mode:", rightCol, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(studyMode, rightCol + 28, currentY);
+
+            currentY += lineSpacing;
+            docPdf.setFont("helvetica", "bold"); docPdf.text("Standard/Class:", leftCol, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(classDetails, leftCol + valOffset, currentY);
+            
+            docPdf.setFont("helvetica", "bold"); docPdf.text("Payment Mode:", rightCol, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(tx.paymentMode, rightCol + 28, currentY);
+
+            currentY += lineSpacing;
+            docPdf.setFont("helvetica", "bold"); docPdf.text("Mobile No:", leftCol, currentY); 
+            docPdf.setFont("helvetica", "normal"); docPdf.text(mobile, leftCol + valOffset, currentY);
 
             const displayMonthName = tx.feeMonth ? new Date(tx.feeMonth + "-01").toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : 'N/A';
+            
+            // 6. Structured Grid Table
             docPdf.autoTable({
-                startY: 105, headStyles: { fillColor: [hColor.r, hColor.g, hColor.b], textColor: [headerTxtColor.r, headerTxtColor.g, headerTxtColor.b] }, head: [['Description', 'Amount']],
-                body: [[`Tuition Fees (Month: ${displayMonthName})`, `Rs. ${tx.amount}`], ['Total Paid', `Rs. ${tx.amount}`]],
-                styles: { textColor: [tColor.r, tColor.g, tColor.b] }
+                startY: currentY + 10, 
+                headStyles: { fillColor: [hColor.r, hColor.g, hColor.b], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, 
+                head: [['S.No', 'Description', 'Month', 'Amount (INR)']],
+                body: [['1', 'Tuition Fees', displayMonthName, tx.amount.toString()]],
+                foot: [['', 'TOTAL AMOUNT', '', `Rs. ${tx.amount.toString()}`]],
+                footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+                theme: 'grid',
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 15 },
+                    2: { halign: 'center', cellWidth: 40 },
+                    3: { halign: 'right', cellWidth: 40 }
+                },
+                styles: { textColor: [tColor.r, tColor.g, tColor.b], fontSize: 10, cellPadding: 4 }
             });
 
+            const finalY = docPdf.lastAutoTable.finalY + 15;
+
+            // 7. QR Code
+            try {
+                const qrData = encodeURIComponent(`No:${tx.receiptNo || 'N/A'}|Name:${tx.studentName}|Amt:${tx.amount}`);
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.src = qrUrl;
+                await new Promise((resolve) => {
+                    img.onload = () => {
+                        docPdf.addImage(img, 'PNG', 15, finalY, 30, 30);
+                        resolve();
+                    };
+                    img.onerror = () => resolve();
+                });
+            } catch (qrErr) { console.warn("QR skip"); }
+
+            // 8. Footer & Signature
             docPdf.setFontSize(10);
-            const sigY = docPdf.lastAutoTable.finalY + 20;
-            docPdf.setFont("helvetica", "bold"); docPdf.text(`For ${headTxt}`, 130, sigY);
-            docPdf.setFont("helvetica", "normal"); docPdf.text("S/d", 130, sigY + 6);
-            docPdf.text("TAHURA SALMAN MEMAN", 130, sigY + 12);
-            docPdf.text("Authorized Signatory", 130, sigY + 18);
+            docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
+            docPdf.setFont("helvetica", "bold"); 
+            docPdf.text(`For ${headTxt}`, 160, finalY + 10, { align: "center" });
+            
+            if (settings.signatureBase64) {
+                docPdf.addImage(settings.signatureBase64, 'PNG', 140, finalY + 12, 40, 15, '', 'NONE');
+            } else {
+                docPdf.setTextColor(hColor.r, hColor.g, hColor.b);
+                docPdf.setFont("helvetica", "italic"); 
+                docPdf.setFontSize(14);
+                docPdf.text("Digital Signature", 160, finalY + 22, { align: "center" });
+                docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
+            }
+            
+            docPdf.setFontSize(10);
+            docPdf.setFont("helvetica", "normal"); 
+            docPdf.text("Authorized Signatory", 160, finalY + 32, { align: "center" });
+
+            docPdf.setFontSize(8);
+            docPdf.setTextColor(150, 150, 150);
+            docPdf.text("This is a digitally generated document and does not require a physical signature.", 105, 285, { align: "center" });
 
             if(action === 'download') {
                 docPdf.save(`${(tx.receiptNo || 'Receipt').replace(/\//g, '_')}.pdf`);
@@ -2142,9 +2448,9 @@
             const payouts = window.data.transactions.filter(tx => tx.type === 'teacher_payout' && tx.teacherId === tId && tx.date.startsWith(monthStr));
             
             let earned = 0; let bodyData = [];
-            fees.forEach(f => {
+            fees.forEach((f, index) => {
                 earned += (f.teacherShare || 0);
-                bodyData.push([f.studentName, `Rs. ${f.amount}`, `Rs. ${f.teacherShare || 0}`]);
+                bodyData.push([index + 1, f.studentName, `Rs. ${f.amount}`, `Rs. ${f.teacherShare || 0}`]);
             });
             
             let paid = 0; let modes = new Set();
@@ -2153,43 +2459,133 @@
             const displayMonth = new Date(monthStr + "-01").toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
             const settings = window.data.settings || {};
-            const headTxt = settings.headingText || "NURANI TUTION CLASSES";
+            const headTxt = settings.headingText || "NURANI TUITION CLASSES";
             const hColor = window.hexToRgb(settings.headingColor || "#4f46e5");
             const headerTxtColor = window.hexToRgb(settings.headerTextColor || "#ffffff");
+            const tColor = window.hexToRgb(settings.textColor || "#323232");
 
             const { jsPDF } = window.jspdf; 
             const docPdf = new jsPDF();
             
-            docPdf.setFillColor(hColor.r, hColor.g, hColor.b); docPdf.rect(0, 0, 210, 30, 'F');
-            if(settings.logoBase64) { docPdf.addImage(settings.logoBase64, 'PNG', 10, 2, 26, 26); }
-
-            docPdf.setTextColor(headerTxtColor.r, headerTxtColor.g, headerTxtColor.b); docPdf.setFontSize(20); docPdf.setFont("helvetica", "bold");
-            docPdf.text(headTxt, 105, 18, { align: "center" });
+            // 1. Draw Header Background
+            docPdf.setFillColor(hColor.r, hColor.g, hColor.b); 
+            docPdf.rect(0, 0, 210, 45, 'F');
             
-            docPdf.setTextColor(50, 50, 50); docPdf.setFontSize(14); 
-            docPdf.text("SHARING CERTIFICATE / SALARY SLIP", 105, 45, { align: "center" });
-            
-            docPdf.setFontSize(11); docPdf.setFont("helvetica", "normal");
-            docPdf.text(`Teacher Name: ${t.name}`, 20, 60);
-            docPdf.text(`Month: ${displayMonth}`, 140, 60);
-            docPdf.text(`Sharing Percentage: ${t.share}%`, 20, 68);
+            // 2. High Quality Logo & Watermark
+            if(settings.logoBase64) { 
+                docPdf.addImage(settings.logoBase64, 'PNG', 10, 5, 35, 35, '', 'NONE');
+                const op = settings.logoOpacity !== undefined ? settings.logoOpacity : 0.15;
+                docPdf.setGState(new docPdf.GState({opacity: op}));
+                docPdf.addImage(settings.logoBase64, 'PNG', 45, 90, 120, 120, '', 'NONE');
+                docPdf.setGState(new docPdf.GState({opacity: 1.0}));
+            }
 
+            // 3. Professional Header
+            const titleX = settings.logoBase64 ? 115 : 105;
+            docPdf.setTextColor(headerTxtColor.r, headerTxtColor.g, headerTxtColor.b); 
+            docPdf.setFontSize(22); 
+            docPdf.setFont("helvetica", "bold");
+            docPdf.text(headTxt, titleX, 22, { align: "center" });
+            
+            docPdf.setTextColor(240, 240, 240); 
+            docPdf.setFontSize(10); 
+            docPdf.setFont("helvetica", "italic");
+            docPdf.text("The Step towards Excellence", titleX, 30, { align: "center" });
+
+            // 4. Receipt Title
+            docPdf.setTextColor(tColor.r, tColor.g, tColor.b); 
+            docPdf.setFontSize(14); 
+            docPdf.setFont("helvetica", "bold");
+            docPdf.text("SALARY / SHARING CERTIFICATE", 105, 55, { align: "center" });
+            docPdf.setLineWidth(0.5);
+            docPdf.setDrawColor(hColor.r, hColor.g, hColor.b);
+            docPdf.line(60, 57, 150, 57);
+
+            // 5. Two-Column Details
+            docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
+            docPdf.setFontSize(10); 
+            
+            const leftCol = 15;
+            const rightCol = 120;
+            const valOffset = 36; 
+            let currentY = 70;
+            const lineSpacing = 8;
+
+            docPdf.setFont("helvetica", "bold"); docPdf.text("Teacher Name:", leftCol, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(t.name, leftCol + valOffset, currentY);
+            
+            docPdf.setFont("helvetica", "bold"); docPdf.text("Month:", rightCol, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(displayMonth, rightCol + 28, currentY);
+
+            currentY += lineSpacing;
+            docPdf.setFont("helvetica", "bold"); docPdf.text("Sharing Percentage:", leftCol, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(`${t.share}%`, leftCol + valOffset, currentY);
+            
+            docPdf.setFont("helvetica", "bold"); docPdf.text("Mobile No:", rightCol, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(t.whatsapp || 'N/A', rightCol + 28, currentY);
+
+            // 6. Structured Grid Table
             docPdf.autoTable({
-                startY: 75, headStyles: { fillColor: [hColor.r, hColor.g, hColor.b], textColor: [headerTxtColor.r, headerTxtColor.g, headerTxtColor.b] }, 
-                head: [['Student Name', 'Student Fee', 'Teacher Share']],
-                body: bodyData.length ? bodyData : [['No students paid', '-', '-']],
-                foot: [['TOTAL EARNED', '', `Rs. ${earned}`]],
-                footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' }
+                startY: currentY + 10, 
+                headStyles: { fillColor: [hColor.r, hColor.g, hColor.b], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, 
+                head: [['S.No', 'Student Name', 'Student Fee', 'Teacher Share']],
+                body: bodyData.length ? bodyData : [['-', 'No students paid', '-', '-']],
+                foot: [['', 'TOTAL EARNED', '', `Rs. ${earned}`]],
+                footStyles: { fillColor: [240, 240, 240], textColor: [0,0,0], fontStyle: 'bold' },
+                theme: 'grid',
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 15 },
+                    2: { halign: 'center', cellWidth: 40 },
+                    3: { halign: 'right', cellWidth: 40 }
+                },
+                styles: { textColor: [tColor.r, tColor.g, tColor.b], fontSize: 10, cellPadding: 4 }
             });
 
             const finalY = docPdf.lastAutoTable.finalY + 15;
-            docPdf.text(`Total Amount Paid: Rs. ${paid}`, 20, finalY);
-            docPdf.text(`Payment Mode: ${modeStr}`, 20, finalY + 8);
+
+            // 7. QR Code
+            try {
+                const qrData = encodeURIComponent(`No:${t.name}|Month:${monthStr}|Earned:${earned}`);
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.src = qrUrl;
+                await new Promise((resolve) => {
+                    img.onload = () => {
+                        docPdf.addImage(img, 'PNG', 15, finalY, 30, 30);
+                        resolve();
+                    };
+                    img.onerror = () => resolve();
+                });
+            } catch (qrErr) { console.warn("QR skip"); }
+
+            // 8. Footer & Signature
+            docPdf.setFontSize(10);
+            docPdf.setFont("helvetica", "normal"); 
+            docPdf.text(`Total Amount Paid: Rs. ${paid}`, 50, finalY + 10);
+            docPdf.text(`Payment Mode: ${modeStr}`, 50, finalY + 18);
+
+            docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
+            docPdf.setFont("helvetica", "bold"); 
+            docPdf.text(`For ${headTxt}`, 160, finalY + 10, { align: "center" });
             
-            docPdf.setFont("helvetica", "bold"); docPdf.text(`For ${headTxt}`, 130, finalY + 20);
-            docPdf.setFont("helvetica", "normal"); docPdf.text("S/d", 130, finalY + 28);
-            docPdf.text("TAHURA SALMAN MEMAN", 130, finalY + 36); 
-            docPdf.text("Authorized Signatory", 130, finalY + 44);
+            if (settings.signatureBase64) {
+                docPdf.addImage(settings.signatureBase64, 'PNG', 140, finalY + 12, 40, 15, '', 'NONE');
+            } else {
+                docPdf.setTextColor(hColor.r, hColor.g, hColor.b);
+                docPdf.setFont("helvetica", "italic"); 
+                docPdf.setFontSize(14);
+                docPdf.text("Digital Signature", 160, finalY + 22, { align: "center" });
+                docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
+            }
+            
+            docPdf.setFontSize(10);
+            docPdf.setFont("helvetica", "normal"); 
+            docPdf.text("Authorized Signatory", 160, finalY + 32, { align: "center" });
+
+            docPdf.setFontSize(8);
+            docPdf.setTextColor(150, 150, 150);
+            docPdf.text("This is a digitally generated document and does not require a physical signature.", 105, 285, { align: "center" });
 
             if(action === 'whatsapp') {
                 // Download the PDF instantly so the user has it ready to attach manually
@@ -2276,6 +2672,7 @@
             document.getElementById('s-medium').value = s.medium || 'English';
             document.getElementById('s-whatsapp').value = s.whatsapp || '';
             document.getElementById('s-joindate').value = s.joinDate || '';
+            document.getElementById('s-study-mode').value = s.studyMode || 'Offline';
             document.getElementById('s-fees').value = s.monthlyFees || '';
             
             const teacherSelect = document.getElementById('s-teacher');
@@ -2291,7 +2688,7 @@
 
         window.deleteStudent = async function(id) {
             if(confirm("Are you sure you want to completely remove this student? This action cannot be undone.")) {
-                try { await deleteDoc(doc(db, 'students', id)); } catch(e) { console.error("Error deleting", e); }
+                try { await deleteDoc(doc(db, getColRef('students').path, id)); } catch(e) { console.error("Error deleting", e); }
             }
         };
 
@@ -2459,9 +2856,10 @@
                 studentName: s.name,
                 std: s.std || '',
                 whatsapp: s.whatsapp || '',
-                teacherId: s.teacherId, // Keeps array if it's an array
+                studyMode: s.studyMode || 'Offline',
+                teacherId: s.teacherId, 
                 teacherName: tNames.join(', ') || 'N/A',
-                teacherShares: teacherSharesMap, // Mapped shares
+                teacherShares: teacherSharesMap, 
                 teacherShare: tShareAmt,
                 profit: profitAmt,
                 amount: amt
@@ -2502,6 +2900,7 @@
                     medium: document.getElementById('s-medium').value,
                     whatsapp: document.getElementById('s-whatsapp').value,
                     joinDate: document.getElementById('s-joindate').value,
+                    studyMode: document.getElementById('s-study-mode').value, // Add Study Mode
                     teacherId: selectedTeachers, // Array of selected teachers
                     monthlyFees: parseFloat(document.getElementById('s-fees').value),
                     status: 'active'
@@ -2520,25 +2919,7 @@
                 e.target.reset();
             } catch (err) {
                 console.error("[STUDENT] Firebase save failed.", err);
-                
-                // LocalStorage Fallback logic
-                const teacherSelect = document.getElementById('s-teacher');
-                const selectedTeachers = Array.from(teacherSelect.selectedOptions).map(opt => opt.value).filter(v => v !== '');
-                const payload = {
-                    name: document.getElementById('s-name').value,
-                    whatsapp: document.getElementById('s-whatsapp').value,
-                    teacherId: selectedTeachers,
-                    monthlyFees: parseFloat(document.getElementById('s-fees').value),
-                    status: 'active',
-                    id: 'local_' + Date.now()
-                };
-                let offlineStudents = JSON.parse(localStorage.getItem('offline_students') || '[]');
-                offlineStudents.push(payload);
-                localStorage.setItem('offline_students', JSON.stringify(offlineStudents));
-                
-                alert("Network error: Saved locally (Offline Mode)!");
-                window.closeModal('modal-add-student');
-                e.target.reset();
+                alert("Error saving student.");
             } finally {
                 btn.innerHTML = origText;
                 btn.disabled = false;
@@ -2637,23 +3018,41 @@
                 
                 if (!selectedMonth || !document.getElementById('fee-date').value) throw new Error("Please fill required fields");
 
-                let receiptNo = `NTC/OFFLINE/${Date.now()}`;
-                const yr = paymentDateObj.getFullYear(); const mth = paymentDateObj.getMonth() + 1;
-                const fyStr = `${mth >= 4 ? yr.toString().slice(-2) : (yr - 1).toString().slice(-2)}-${mth >= 4 ? (yr + 1).toString().slice(-2) : yr.toString().slice(-2)}`;
+                // FY Calculation: Start in April
+                const yr = paymentDateObj.getFullYear(); 
+                const mth = paymentDateObj.getMonth() + 1;
+                const fyStartYr = mth >= 4 ? yr : yr - 1;
+                const fyFullStr = `${fyStartYr}-${(fyStartYr + 1).toString().slice(-2)}`;
+                
+                // Get Study Mode Prefix
+                const studyMode = (window.currentFeeProcess.studyMode || 'Offline').toUpperCase();
+                const receiptPrefix = `NC/${studyMode}/${fyFullStr}/`;
 
                 let maxSeq = 0;
                 (window.data.transactions || []).forEach(tx => {
-                    if (tx.receiptNo && tx.receiptNo.includes(`NTC/${fyStr}/`)) {
-                        const seq = parseInt(tx.receiptNo.split('/').pop());
+                    if (tx.receiptNo && tx.receiptNo.startsWith(receiptPrefix)) {
+                        const seqParts = tx.receiptNo.split('/');
+                        const seq = parseInt(seqParts[seqParts.length - 1]);
                         if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
                     }
                 });
-                receiptNo = `NTC/${fyStr}/${String(maxSeq + 1).padStart(3, '0')}`;
+                
+                const receiptNo = `${receiptPrefix}${String(maxSeq + 1).padStart(4, '0')}`;
                 const displayMonthName = new Date(selectedMonth + "-01").toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+                // Locate Student Details for Receipt
+                const currentStudent = window.data.students.find(s=>s.id===window.currentFeeProcess.studentId);
+                const parentName = currentStudent?.parentName || 'N/A';
+                const whatsapp = currentStudent?.whatsapp || 'N/A';
+                const classDetails = `${currentStudent?.std || ''} ${currentStudent?.board || ''} ${currentStudent?.medium || ''}`.trim() || 'N/A';
 
                 // Generate local PDF receipt
                 window.generateReceipt(
                     window.currentFeeProcess.studentName,
+                    parentName,
+                    whatsapp,
+                    classDetails,
+                    window.currentFeeProcess.studyMode || 'OFFLINE',
                     window.currentFeeProcess.amount,
                     paymentDateObj.toLocaleDateString('en-IN'),
                     displayMonthName,
@@ -2680,9 +3079,6 @@
                     }
                 } catch (firebaseErr) {
                     console.warn("[PAYMENT] Firebase sync failed, saved locally:", firebaseErr);
-                    let offlineTx = JSON.parse(localStorage.getItem('offline_payments') || '[]');
-                    offlineTx.push(payload);
-                    localStorage.setItem('offline_payments', JSON.stringify(offlineTx));
                 }
 
                 // WhatsApp
