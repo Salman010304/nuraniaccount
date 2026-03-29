@@ -1117,7 +1117,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         // ================= DEFINE GLOBALS EARLY =================
         window.switchView = function(viewId) {
@@ -1299,7 +1298,6 @@
         const app = initializeApp(firebaseConfig); 
         const auth = getAuth(app); 
         const db = getFirestore(app); 
-        const storage = getStorage(app);
         
         window.data = { students: [], teachers: [], transactions: [], settings: {} };
         window.currentUser = null;
@@ -1884,57 +1882,6 @@
             const aInc = document.getElementById('analysis-income'); if(aInc) aInc.innerText = `₹${t.rev}`;
             const aDed = document.getElementById('analysis-deductions'); if(aDed) aDed.innerText = `₹${totalDeductions}`;
             const aMar = document.getElementById('analysis-margin'); if(aMar) aMar.innerText = `${margin}%`;
-
-            window.lastChartData = { rev: t.rev, exp: t.exp, tEarned: t.tEarned, netProfit };
-            
-            if(typeof window.renderCharts === 'function' && document.getElementById('charts-container')?.classList.contains('chart-3d-active')) {
-                window.renderCharts(t.rev, t.exp, t.tEarned, netProfit);
-            }
-        };
-
-        window.renderCharts = function(rev, exp, tEarned, netProfit) {
-            try {
-                const ctxBar = document.getElementById('barChart');
-                const ctxPie = document.getElementById('pieChart');
-                if(!ctxBar || !ctxPie) return;
-                
-                if (window.Chart) {
-                    const existingBar = Chart.getChart(ctxBar);
-                    if (existingBar) existingBar.destroy();
-                    
-                    const existingPie = Chart.getChart(ctxPie);
-                    if (existingPie) existingPie.destroy();
-                }
-
-                if (window.myBarChart) { window.myBarChart.destroy(); window.myBarChart = null; }
-                if (window.myPieChart) { window.myPieChart.destroy(); window.myPieChart = null; }
-                
-                window.myBarChart = new Chart(ctxBar, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Income', 'Expenses', 'Teacher Share', 'Net Profit'],
-                        datasets: [{
-                            label: 'Amount (₹)',
-                            data: [rev || 0, exp || 0, tEarned || 0, netProfit || 0],
-                            backgroundColor: ['#22c55e', '#ef4444', '#f59e0b', '#6366f1'],
-                            borderRadius: 6
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-                
-                window.myPieChart = new Chart(ctxPie, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Net Profit', 'Expenses', 'Teachers'],
-                        datasets: [{
-                            data: [Math.max(0, netProfit || 0), exp || 0, tEarned || 0],
-                            backgroundColor: ['#6366f1', '#ef4444', '#f59e0b']
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-            } catch (e) { console.error("[CHARTS] Error loading charts:", e); }
         };
 
         window.updateDynamicManifest = function(logoBase64, appName) {
@@ -2131,93 +2078,129 @@
                 const settings = window.data.settings || {};
                 const headTxt = settings.headingText || "NURANI TUITION CLASSES";
                 const subHeadTxt = settings.subHeadingText || "The Step towards Excellence";
-                const hColor = window.hexToRgb(settings.headingColor || "#4f46e5");
-                const headerTxtColor = window.hexToRgb(settings.headerTextColor || "#ffffff");
                 const tColor = window.hexToRgb(settings.textColor || "#323232");
 
                 const { jsPDF } = window.jspdf;
                 const docPdf = new jsPDF();
                 
-                // 1. Draw Header Background
-                docPdf.setFillColor(hColor.r, hColor.g, hColor.b); 
-                docPdf.rect(0, 0, 210, 45, 'F');
+                // 1. Full Page Background & Border
+                docPdf.setFillColor(255, 255, 255);
+                docPdf.rect(0, 0, 210, 297, 'F'); // White Background
                 
-                // 2. High Quality Logo & Watermark
+                docPdf.setDrawColor(200, 200, 200); // Light Grey Border
+                docPdf.setLineWidth(0.5);
+                docPdf.rect(5, 5, 200, 287, 'S');
+                
+                // 2. Premium Header (Letterpad Gradient Style)
+                const steps = 200;
+                const stepWidth = 200 / steps;
+                for (let i = 0; i < steps; i++) {
+                    let ratio = i / steps;
+                    let r, g, b;
+                    if (ratio < 0.5) {
+                        let localRatio = ratio * 2;
+                        r = Math.round(59 + localRatio * (67 - 59));  // Dark Purple to Blue
+                        g = Math.round(12 + localRatio * (97 - 12));
+                        b = Math.round(163 + localRatio * (238 - 163));
+                    } else {
+                        let localRatio = (ratio - 0.5) * 2;
+                        r = Math.round(67 + localRatio * (76 - 67));  // Blue to Light Blue
+                        g = Math.round(97 + localRatio * (201 - 97));
+                        b = Math.round(238 + localRatio * (240 - 238));
+                    }
+                    docPdf.setFillColor(r, g, b);
+                    docPdf.rect(5 + (i * stepWidth), 5, stepWidth + 0.5, 40, 'F');
+                }
+                
+                // Header Borders (Subtle shine overlay + thick bottom)
+                docPdf.setDrawColor(255, 255, 255); docPdf.setLineWidth(0.2); docPdf.line(5, 6, 205, 6);
+                docPdf.setDrawColor(30, 6, 80); docPdf.setLineWidth(1); docPdf.line(5, 45, 205, 45);
+
+                let titleStartX = 105;
+                
+                // 3. High Quality Logo & Centered Watermark
                 if(settings.logoBase64) { 
-                    // Header Logo (Top Left) - Disable compression for clarity
-                    docPdf.addImage(settings.logoBase64, 'PNG', 10, 5, 35, 35, '', 'NONE');
+                    const logoSize = 35; // Size control
+                    titleStartX = 105 + (logoSize / 2); // Shift text to right to prevent overlap
+
+                    // High-res top-left logo
+                    docPdf.addImage(settings.logoBase64, 'PNG', 12, 7, logoSize, logoSize, '', 'NONE');
                     
-                    // Watermark Logo (Center)
-                    const op = settings.logoOpacity !== undefined ? settings.logoOpacity : 0.15;
+                    // Light centered watermark
+                    let op = settings.logoOpacity !== undefined ? settings.logoOpacity : 0.08;
+                    if(op > 0.1) op = 0.08; // Keep it light
                     docPdf.setGState(new docPdf.GState({opacity: op}));
                     docPdf.addImage(settings.logoBase64, 'PNG', 45, 90, 120, 120, '', 'NONE');
-                    docPdf.setGState(new docPdf.GState({opacity: 1.0})); // Reset
+                    docPdf.setGState(new docPdf.GState({opacity: 1.0}));
                 }
 
-                // 3. Professional Header (Adjust center if logo exists)
-                const titleX = settings.logoBase64 ? 115 : 105;
-                docPdf.setTextColor(headerTxtColor.r, headerTxtColor.g, headerTxtColor.b); 
+                // 4. Header Titles
+                docPdf.setTextColor(255, 255, 255); 
                 docPdf.setFontSize(22); 
                 docPdf.setFont("helvetica", "bold");
-                docPdf.text(headTxt, titleX, 22, { align: "center" });
+                docPdf.text(headTxt, titleStartX, 24, { align: "center" });
                 
-                docPdf.setTextColor(240, 240, 240); 
+                docPdf.setTextColor(220, 220, 220); 
                 docPdf.setFontSize(10); 
                 docPdf.setFont("helvetica", "italic");
-                docPdf.text(subHeadTxt, titleX, 30, { align: "center" });
+                docPdf.text(subHeadTxt, titleStartX, 32, { align: "center" });
 
-                // 4. Receipt Title & Formatted Number
+                // 5. Receipt Title & Formatted Number
                 docPdf.setTextColor(tColor.r, tColor.g, tColor.b); 
                 docPdf.setFontSize(14); 
                 docPdf.setFont("helvetica", "bold");
                 docPdf.text("FEE RECEIPT", 105, 55, { align: "center" });
                 
                 docPdf.setLineWidth(0.5);
-                docPdf.setDrawColor(hColor.r, hColor.g, hColor.b);
+                docPdf.setDrawColor(67, 97, 238); // Blue underline
                 docPdf.line(90, 57, 120, 57);
 
                 docPdf.setFontSize(12);
-                docPdf.setTextColor(220, 38, 38); // Distinct red color for receipt number
+                docPdf.setTextColor(220, 38, 38);
                 docPdf.text(`Receipt No: ${receiptNo}`, 105, 65, { align: "center" });
 
-                // 5. Two-Column Student Details
+                // 6. Student Details Box
+                docPdf.setFillColor(248, 249, 250);
+                docPdf.setDrawColor(220, 220, 220);
+                docPdf.setLineWidth(0.5);
+                docPdf.roundedRect(15, 70, 180, 35, 2, 2, 'FD');
+
                 docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
                 docPdf.setFontSize(10); 
                 
-                const leftCol = 15;
-                const rightCol = 120;
-                const valOffset = 32; 
-                let currentY = 75;
+                const leftCol = 20; const leftVal = 55;
+                const rightCol = 115; const rightVal = 145;
+                let currentY = 78;
                 const lineSpacing = 8;
 
                 docPdf.setFont("helvetica", "bold"); docPdf.text("Student Name:", leftCol, currentY);
-                docPdf.setFont("helvetica", "normal"); docPdf.text(studentName, leftCol + valOffset, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(studentName, leftVal, currentY);
                 
                 docPdf.setFont("helvetica", "bold"); docPdf.text("Date:", rightCol, currentY);
-                docPdf.setFont("helvetica", "normal"); docPdf.text(dateStr, rightCol + 28, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(dateStr, rightVal, currentY);
 
                 currentY += lineSpacing;
                 docPdf.setFont("helvetica", "bold"); docPdf.text("Parent Name:", leftCol, currentY);
-                docPdf.setFont("helvetica", "normal"); docPdf.text(parentName || 'N/A', leftCol + valOffset, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(parentName || 'N/A', leftVal, currentY);
                 
                 docPdf.setFont("helvetica", "bold"); docPdf.text("Study Mode:", rightCol, currentY);
-                docPdf.setFont("helvetica", "normal"); docPdf.text(studyMode || 'OFFLINE', rightCol + 28, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(studyMode || 'OFFLINE', rightVal, currentY);
 
                 currentY += lineSpacing;
                 docPdf.setFont("helvetica", "bold"); docPdf.text("Standard/Class:", leftCol, currentY);
-                docPdf.setFont("helvetica", "normal"); docPdf.text(classDetails || 'N/A', leftCol + valOffset, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(classDetails || 'N/A', leftVal, currentY);
                 
                 docPdf.setFont("helvetica", "bold"); docPdf.text("Payment Mode:", rightCol, currentY);
-                docPdf.setFont("helvetica", "normal"); docPdf.text(fullModeStr, rightCol + 28, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(fullModeStr, rightVal, currentY);
 
                 currentY += lineSpacing;
                 docPdf.setFont("helvetica", "bold"); docPdf.text("Mobile No:", leftCol, currentY); 
-                docPdf.setFont("helvetica", "normal"); docPdf.text(mobile || 'N/A', leftCol + valOffset, currentY);
+                docPdf.setFont("helvetica", "normal"); docPdf.text(mobile || 'N/A', leftVal, currentY);
 
-                // 6. Structured Grid Table
+                // 7. Structured Grid Table
                 docPdf.autoTable({
-                    startY: currentY + 10, 
-                    headStyles: { fillColor: [hColor.r, hColor.g, hColor.b], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, 
+                    startY: currentY + 12, 
+                    headStyles: { fillColor: [67, 97, 238], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, 
                     head: [['S.No', 'Description', 'Month', 'Amount (INR)']],
                     body: [['1', 'Tuition Fees', monthName, amount.toString()]],
                     foot: [['', 'TOTAL AMOUNT', '', `Rs. ${amount.toString()}`]],
@@ -2228,50 +2211,35 @@
                         2: { halign: 'center', cellWidth: 40 },
                         3: { halign: 'right', cellWidth: 40 }
                     },
-                    styles: { textColor: [tColor.r, tColor.g, tColor.b], fontSize: 10, cellPadding: 4 }
+                    styles: { textColor: [tColor.r, tColor.g, tColor.b], fontSize: 10, cellPadding: 5, lineColor: [200, 200, 200], lineWidth: 0.1 }
                 });
                 
-                const finalY = docPdf.lastAutoTable.finalY + 15;
+                const finalY = docPdf.lastAutoTable.finalY + 25;
 
-                // 7. QR Code (Dynamic API implementation)
-                try {
-                    const qrData = encodeURIComponent(`No:${receiptNo}|Name:${studentName}|Amt:${amount}`);
-                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
-                    const img = new Image();
-                    img.crossOrigin = "Anonymous";
-                    img.src = qrUrl;
-                    await new Promise((resolve) => {
-                        img.onload = () => {
-                            docPdf.addImage(img, 'PNG', 15, finalY, 30, 30);
-                            resolve();
-                        };
-                        img.onerror = () => resolve(); // Skip if fails to maintain backwards compatibility
-                    });
-                } catch (qrErr) { console.warn("QR Code Generation Skipped"); }
-
-                // 8. Footer & Digital Signature
+                // 8. Footer & Digital Signature (Right Aligned)
                 docPdf.setFontSize(10);
                 docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
                 docPdf.setFont("helvetica", "bold"); 
-                docPdf.text(`For ${headTxt}`, 160, finalY + 10, { align: "center" });
+                docPdf.text(`For ${headTxt}`, 160, finalY, { align: "center" });
                 
                 if (settings.signatureBase64) {
-                    docPdf.addImage(settings.signatureBase64, 'PNG', 140, finalY + 12, 40, 15, '', 'NONE');
+                    docPdf.addImage(settings.signatureBase64, 'PNG', 140, finalY + 2, 40, 15, '', 'NONE');
                 } else {
-                    docPdf.setTextColor(hColor.r, hColor.g, hColor.b);
+                    docPdf.setTextColor(67, 97, 238);
                     docPdf.setFont("helvetica", "italic"); 
                     docPdf.setFontSize(14);
-                    docPdf.text("Digital Signature", 160, finalY + 22, { align: "center" });
+                    docPdf.text("Digital Signature", 160, finalY + 12, { align: "center" });
                     docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
                 }
                 
                 docPdf.setFontSize(10);
-                docPdf.setFont("helvetica", "normal"); 
-                docPdf.text("Authorized Signatory", 160, finalY + 32, { align: "center" });
+                docPdf.setFont("helvetica", "bold"); 
+                docPdf.text("Authorized Signatory", 160, finalY + 22, { align: "center" });
 
                 docPdf.setFontSize(8);
+                docPdf.setFont("helvetica", "normal"); 
                 docPdf.setTextColor(150, 150, 150);
-                docPdf.text("This is a digitally generated document and does not require a physical signature.", 105, 285, { align: "center" });
+                docPdf.text("This is a digitally generated receipt and does not require a physical signature.", 105, 285, { align: "center" });
                 
                 docPdf.save(`${receiptNo.replace(/\//g, '_')}.pdf`);
             } catch(e) { console.error("[PDF] Generate Error", e); }
@@ -2289,91 +2257,125 @@
             const settings = window.data.settings || {};
             const headTxt = settings.headingText || "NURANI TUITION CLASSES";
             const subHeadTxt = settings.subHeadingText || "The Step towards Excellence";
-            const hColor = window.hexToRgb(settings.headingColor || "#4f46e5");
-            const headerTxtColor = window.hexToRgb(settings.headerTextColor || "#ffffff");
             const tColor = window.hexToRgb(settings.textColor || "#323232");
 
             const { jsPDF } = window.jspdf; const docPdf = new jsPDF();
             
-            // 1. Background Header
-            docPdf.setFillColor(hColor.r, hColor.g, hColor.b); 
-            docPdf.rect(0, 0, 210, 45, 'F');
+            // 1. Full Page Background & Border
+            docPdf.setFillColor(255, 255, 255);
+            docPdf.rect(0, 0, 210, 297, 'F');
             
-            // 2. High Quality Logo & Watermark
+            docPdf.setDrawColor(200, 200, 200); 
+            docPdf.setLineWidth(0.5);
+            docPdf.rect(5, 5, 200, 287, 'S');
+
+            // 2. Premium Header
+            const steps = 200;
+            const stepWidth = 200 / steps;
+            for (let i = 0; i < steps; i++) {
+                let ratio = i / steps;
+                let r, g, b;
+                if (ratio < 0.5) {
+                    let localRatio = ratio * 2;
+                    r = Math.round(59 + localRatio * (67 - 59));
+                    g = Math.round(12 + localRatio * (97 - 12));
+                    b = Math.round(163 + localRatio * (238 - 163));
+                } else {
+                    let localRatio = (ratio - 0.5) * 2;
+                    r = Math.round(67 + localRatio * (76 - 67));
+                    g = Math.round(97 + localRatio * (201 - 97));
+                    b = Math.round(238 + localRatio * (240 - 238));
+                }
+                docPdf.setFillColor(r, g, b);
+                docPdf.rect(5 + (i * stepWidth), 5, stepWidth + 0.5, 40, 'F');
+            }
+            
+            docPdf.setDrawColor(255, 255, 255); docPdf.setLineWidth(0.2); docPdf.line(5, 6, 205, 6);
+            docPdf.setDrawColor(30, 6, 80); docPdf.setLineWidth(1); docPdf.line(5, 45, 205, 45);
+            
+            let titleStartX = 105;
+
+            // 3. High Quality Logo & Watermark
             if(settings.logoBase64) { 
-                docPdf.addImage(settings.logoBase64, 'PNG', 10, 5, 35, 35, '', 'NONE');
-                const op = settings.logoOpacity !== undefined ? settings.logoOpacity : 0.15;
+                const logoSize = 35;
+                titleStartX = 105 + (logoSize / 2);
+
+                docPdf.addImage(settings.logoBase64, 'PNG', 12, 7, logoSize, logoSize, '', 'NONE');
+                let op = settings.logoOpacity !== undefined ? settings.logoOpacity : 0.08;
+                if(op > 0.1) op = 0.08;
                 docPdf.setGState(new docPdf.GState({opacity: op}));
                 docPdf.addImage(settings.logoBase64, 'PNG', 45, 90, 120, 120, '', 'NONE');
                 docPdf.setGState(new docPdf.GState({opacity: 1.0}));
             }
 
-            // 3. Professional Header
-            const titleX = settings.logoBase64 ? 115 : 105;
-            docPdf.setTextColor(headerTxtColor.r, headerTxtColor.g, headerTxtColor.b); 
+            // 4. Header Titles
+            docPdf.setTextColor(255, 255, 255); 
             docPdf.setFontSize(22); 
             docPdf.setFont("helvetica", "bold");
-            docPdf.text(headTxt, titleX, 22, { align: "center" });
+            docPdf.text(headTxt, titleStartX, 24, { align: "center" });
             
-            docPdf.setTextColor(240, 240, 240); 
+            docPdf.setTextColor(220, 220, 220); 
             docPdf.setFontSize(10); 
             docPdf.setFont("helvetica", "italic");
-            docPdf.text(subHeadTxt, titleX, 30, { align: "center" });
+            docPdf.text(subHeadTxt, titleStartX, 32, { align: "center" });
 
-            // 4. Receipt Title
+            // 5. Receipt Title
             docPdf.setTextColor(tColor.r, tColor.g, tColor.b); 
             docPdf.setFontSize(14); 
             docPdf.setFont("helvetica", "bold");
             docPdf.text("FEE RECEIPT", 105, 55, { align: "center" });
             docPdf.setLineWidth(0.5);
-            docPdf.setDrawColor(hColor.r, hColor.g, hColor.b);
+            docPdf.setDrawColor(67, 97, 238);
             docPdf.line(90, 57, 120, 57);
 
-            // Formatted Receipt No
             docPdf.setFontSize(12);
             docPdf.setTextColor(220, 38, 38);
             docPdf.text(`Receipt No: ${tx.receiptNo || 'N/A'}`, 105, 65, { align: "center" });
 
-            // 5. Two-Column Details
+            // 6. Details Box
+            docPdf.setFillColor(248, 249, 250);
+            docPdf.setDrawColor(220, 220, 220);
+            docPdf.setLineWidth(0.5);
+            docPdf.roundedRect(15, 70, 180, 35, 2, 2, 'FD');
+
             docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
             docPdf.setFontSize(10); 
             
-            const leftCol = 15;
-            const rightCol = 120;
-            const valOffset = 32; 
-            let currentY = 75;
+            const leftCol = 20; const leftVal = 55;
+            const rightCol = 115; const rightVal = 145;
+            let currentY = 78;
             const lineSpacing = 8;
 
             docPdf.setFont("helvetica", "bold"); docPdf.text("Student Name:", leftCol, currentY);
-            docPdf.setFont("helvetica", "normal"); docPdf.text(tx.studentName, leftCol + valOffset, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(tx.studentName, leftVal, currentY);
             
             docPdf.setFont("helvetica", "bold"); docPdf.text("Date:", rightCol, currentY);
-            docPdf.setFont("helvetica", "normal"); docPdf.text(new Date(tx.date).toLocaleDateString('en-IN'), rightCol + 28, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(new Date(tx.date).toLocaleDateString('en-IN'), rightVal, currentY);
 
             currentY += lineSpacing;
             docPdf.setFont("helvetica", "bold"); docPdf.text("Parent Name:", leftCol, currentY);
-            docPdf.setFont("helvetica", "normal"); docPdf.text(parentName, leftCol + valOffset, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(parentName, leftVal, currentY);
             
             docPdf.setFont("helvetica", "bold"); docPdf.text("Study Mode:", rightCol, currentY);
-            docPdf.setFont("helvetica", "normal"); docPdf.text(studyMode, rightCol + 28, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(studyMode, rightVal, currentY);
 
             currentY += lineSpacing;
             docPdf.setFont("helvetica", "bold"); docPdf.text("Standard/Class:", leftCol, currentY);
-            docPdf.setFont("helvetica", "normal"); docPdf.text(classDetails, leftCol + valOffset, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(classDetails, leftVal, currentY);
             
             docPdf.setFont("helvetica", "bold"); docPdf.text("Payment Mode:", rightCol, currentY);
-            docPdf.setFont("helvetica", "normal"); docPdf.text(tx.paymentMode, rightCol + 28, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(tx.paymentMode, rightVal, currentY);
 
             currentY += lineSpacing;
             docPdf.setFont("helvetica", "bold"); docPdf.text("Mobile No:", leftCol, currentY); 
-            docPdf.setFont("helvetica", "normal"); docPdf.text(mobile, leftCol + valOffset, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(mobile, leftVal, currentY);
 
             const displayMonthName = tx.feeMonth ? new Date(tx.feeMonth + "-01").toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : 'N/A';
             
-            // 6. Structured Grid Table
+            // 7. Table
             docPdf.autoTable({
-                startY: currentY + 10, 
-                headStyles: { fillColor: [hColor.r, hColor.g, hColor.b], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, 
+                startY: currentY + 12, 
+                headStyles: { fillColor: [67, 97, 238], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, 
                 head: [['S.No', 'Description', 'Month', 'Amount (INR)']],
                 body: [['1', 'Tuition Fees', displayMonthName, tx.amount.toString()]],
                 foot: [['', 'TOTAL AMOUNT', '', `Rs. ${tx.amount.toString()}`]],
@@ -2384,50 +2386,35 @@
                     2: { halign: 'center', cellWidth: 40 },
                     3: { halign: 'right', cellWidth: 40 }
                 },
-                styles: { textColor: [tColor.r, tColor.g, tColor.b], fontSize: 10, cellPadding: 4 }
+                styles: { textColor: [tColor.r, tColor.g, tColor.b], fontSize: 10, cellPadding: 5, lineColor: [200, 200, 200], lineWidth: 0.1 }
             });
 
-            const finalY = docPdf.lastAutoTable.finalY + 15;
+            const finalY = docPdf.lastAutoTable.finalY + 25;
 
-            // 7. QR Code
-            try {
-                const qrData = encodeURIComponent(`No:${tx.receiptNo || 'N/A'}|Name:${tx.studentName}|Amt:${tx.amount}`);
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
-                const img = new Image();
-                img.crossOrigin = "Anonymous";
-                img.src = qrUrl;
-                await new Promise((resolve) => {
-                    img.onload = () => {
-                        docPdf.addImage(img, 'PNG', 15, finalY, 30, 30);
-                        resolve();
-                    };
-                    img.onerror = () => resolve();
-                });
-            } catch (qrErr) { console.warn("QR skip"); }
-
-            // 8. Footer & Signature
+            // 8. Footer
             docPdf.setFontSize(10);
             docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
             docPdf.setFont("helvetica", "bold"); 
-            docPdf.text(`For ${headTxt}`, 160, finalY + 10, { align: "center" });
+            docPdf.text(`For ${headTxt}`, 160, finalY, { align: "center" });
             
             if (settings.signatureBase64) {
-                docPdf.addImage(settings.signatureBase64, 'PNG', 140, finalY + 12, 40, 15, '', 'NONE');
+                docPdf.addImage(settings.signatureBase64, 'PNG', 140, finalY + 2, 40, 15, '', 'NONE');
             } else {
-                docPdf.setTextColor(hColor.r, hColor.g, hColor.b);
+                docPdf.setTextColor(67, 97, 238);
                 docPdf.setFont("helvetica", "italic"); 
                 docPdf.setFontSize(14);
-                docPdf.text("Digital Signature", 160, finalY + 22, { align: "center" });
+                docPdf.text("Digital Signature", 160, finalY + 12, { align: "center" });
                 docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
             }
             
             docPdf.setFontSize(10);
-            docPdf.setFont("helvetica", "normal"); 
-            docPdf.text("Authorized Signatory", 160, finalY + 32, { align: "center" });
+            docPdf.setFont("helvetica", "bold"); 
+            docPdf.text("Authorized Signatory", 160, finalY + 22, { align: "center" });
 
             docPdf.setFontSize(8);
+            docPdf.setFont("helvetica", "normal");
             docPdf.setTextColor(150, 150, 150);
-            docPdf.text("This is a digitally generated document and does not require a physical signature.", 105, 285, { align: "center" });
+            docPdf.text("This is a digitally generated receipt and does not require a physical signature.", 105, 285, { align: "center" });
 
             if(action === 'download') {
                 docPdf.save(`${(tx.receiptNo || 'Receipt').replace(/\//g, '_')}.pdf`);
@@ -2460,74 +2447,109 @@
 
             const settings = window.data.settings || {};
             const headTxt = settings.headingText || "NURANI TUITION CLASSES";
-            const hColor = window.hexToRgb(settings.headingColor || "#4f46e5");
-            const headerTxtColor = window.hexToRgb(settings.headerTextColor || "#ffffff");
+            const subHeadTxt = settings.subHeadingText || "The Step towards Excellence";
             const tColor = window.hexToRgb(settings.textColor || "#323232");
 
             const { jsPDF } = window.jspdf; 
             const docPdf = new jsPDF();
             
-            // 1. Draw Header Background
-            docPdf.setFillColor(hColor.r, hColor.g, hColor.b); 
-            docPdf.rect(0, 0, 210, 45, 'F');
+            // 1. Full Page Border
+            docPdf.setFillColor(255, 255, 255);
+            docPdf.rect(0, 0, 210, 297, 'F');
+            docPdf.setDrawColor(200, 200, 200); 
+            docPdf.setLineWidth(0.5);
+            docPdf.rect(5, 5, 200, 287, 'S');
+
+            // 2. Premium Header
+            const steps = 200;
+            const stepWidth = 200 / steps;
+            for (let i = 0; i < steps; i++) {
+                let ratio = i / steps;
+                let r, g, b;
+                if (ratio < 0.5) {
+                    let localRatio = ratio * 2;
+                    r = Math.round(59 + localRatio * (67 - 59));
+                    g = Math.round(12 + localRatio * (97 - 12));
+                    b = Math.round(163 + localRatio * (238 - 163));
+                } else {
+                    let localRatio = (ratio - 0.5) * 2;
+                    r = Math.round(67 + localRatio * (76 - 67));
+                    g = Math.round(97 + localRatio * (201 - 97));
+                    b = Math.round(238 + localRatio * (240 - 238));
+                }
+                docPdf.setFillColor(r, g, b);
+                docPdf.rect(5 + (i * stepWidth), 5, stepWidth + 0.5, 40, 'F');
+            }
             
-            // 2. High Quality Logo & Watermark
+            docPdf.setDrawColor(255, 255, 255); docPdf.setLineWidth(0.2); docPdf.line(5, 6, 205, 6);
+            docPdf.setDrawColor(30, 6, 80); docPdf.setLineWidth(1); docPdf.line(5, 45, 205, 45);
+            
+            let titleStartX = 105;
+
+            // 3. Logo & Watermark
             if(settings.logoBase64) { 
-                docPdf.addImage(settings.logoBase64, 'PNG', 10, 5, 35, 35, '', 'NONE');
-                const op = settings.logoOpacity !== undefined ? settings.logoOpacity : 0.15;
+                const logoSize = 35;
+                titleStartX = 105 + (logoSize / 2);
+
+                docPdf.addImage(settings.logoBase64, 'PNG', 12, 7, logoSize, logoSize, '', 'NONE');
+                let op = settings.logoOpacity !== undefined ? settings.logoOpacity : 0.08;
+                if(op > 0.1) op = 0.08;
                 docPdf.setGState(new docPdf.GState({opacity: op}));
                 docPdf.addImage(settings.logoBase64, 'PNG', 45, 90, 120, 120, '', 'NONE');
                 docPdf.setGState(new docPdf.GState({opacity: 1.0}));
             }
 
-            // 3. Professional Header
-            const titleX = settings.logoBase64 ? 115 : 105;
-            docPdf.setTextColor(headerTxtColor.r, headerTxtColor.g, headerTxtColor.b); 
+            // 4. Titles
+            docPdf.setTextColor(255, 255, 255); 
             docPdf.setFontSize(22); 
             docPdf.setFont("helvetica", "bold");
-            docPdf.text(headTxt, titleX, 22, { align: "center" });
+            docPdf.text(headTxt, titleStartX, 24, { align: "center" });
             
-            docPdf.setTextColor(240, 240, 240); 
+            docPdf.setTextColor(220, 220, 220); 
             docPdf.setFontSize(10); 
             docPdf.setFont("helvetica", "italic");
-            docPdf.text("The Step towards Excellence", titleX, 30, { align: "center" });
+            docPdf.text(subHeadTxt, titleStartX, 32, { align: "center" });
 
-            // 4. Receipt Title
+            // 5. Title
             docPdf.setTextColor(tColor.r, tColor.g, tColor.b); 
             docPdf.setFontSize(14); 
             docPdf.setFont("helvetica", "bold");
             docPdf.text("SALARY / SHARING CERTIFICATE", 105, 55, { align: "center" });
             docPdf.setLineWidth(0.5);
-            docPdf.setDrawColor(hColor.r, hColor.g, hColor.b);
+            docPdf.setDrawColor(67, 97, 238);
             docPdf.line(60, 57, 150, 57);
 
-            // 5. Two-Column Details
+            // 6. Details Box
+            docPdf.setFillColor(248, 249, 250);
+            docPdf.setDrawColor(220, 220, 220);
+            docPdf.setLineWidth(0.5);
+            docPdf.roundedRect(15, 65, 180, 25, 2, 2, 'FD');
+
             docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
             docPdf.setFontSize(10); 
             
-            const leftCol = 15;
-            const rightCol = 120;
-            const valOffset = 36; 
-            let currentY = 70;
+            const leftCol = 20; const leftVal = 60;
+            const rightCol = 115; const rightVal = 140;
+            let currentY = 73;
             const lineSpacing = 8;
 
             docPdf.setFont("helvetica", "bold"); docPdf.text("Teacher Name:", leftCol, currentY);
-            docPdf.setFont("helvetica", "normal"); docPdf.text(t.name, leftCol + valOffset, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(t.name, leftVal, currentY);
             
             docPdf.setFont("helvetica", "bold"); docPdf.text("Month:", rightCol, currentY);
-            docPdf.setFont("helvetica", "normal"); docPdf.text(displayMonth, rightCol + 28, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(displayMonth, rightVal, currentY);
 
             currentY += lineSpacing;
             docPdf.setFont("helvetica", "bold"); docPdf.text("Sharing Percentage:", leftCol, currentY);
-            docPdf.setFont("helvetica", "normal"); docPdf.text(`${t.share}%`, leftCol + valOffset, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(`${t.share}%`, leftVal, currentY);
             
             docPdf.setFont("helvetica", "bold"); docPdf.text("Mobile No:", rightCol, currentY);
-            docPdf.setFont("helvetica", "normal"); docPdf.text(t.whatsapp || 'N/A', rightCol + 28, currentY);
+            docPdf.setFont("helvetica", "normal"); docPdf.text(t.whatsapp || 'N/A', rightVal, currentY);
 
-            // 6. Structured Grid Table
+            // 7. Table
             docPdf.autoTable({
-                startY: currentY + 10, 
-                headStyles: { fillColor: [hColor.r, hColor.g, hColor.b], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, 
+                startY: currentY + 12, 
+                headStyles: { fillColor: [67, 97, 238], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, 
                 head: [['S.No', 'Student Name', 'Student Fee', 'Teacher Share']],
                 body: bodyData.length ? bodyData : [['-', 'No students paid', '-', '-']],
                 foot: [['', 'TOTAL EARNED', '', `Rs. ${earned}`]],
@@ -2538,66 +2560,57 @@
                     2: { halign: 'center', cellWidth: 40 },
                     3: { halign: 'right', cellWidth: 40 }
                 },
-                styles: { textColor: [tColor.r, tColor.g, tColor.b], fontSize: 10, cellPadding: 4 }
+                styles: { textColor: [tColor.r, tColor.g, tColor.b], fontSize: 10, cellPadding: 5, lineColor: [200, 200, 200], lineWidth: 0.1 }
             });
 
-            const finalY = docPdf.lastAutoTable.finalY + 15;
+            const finalY = docPdf.lastAutoTable.finalY + 25;
 
-            // 7. QR Code
-            try {
-                const qrData = encodeURIComponent(`No:${t.name}|Month:${monthStr}|Earned:${earned}`);
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}`;
-                const img = new Image();
-                img.crossOrigin = "Anonymous";
-                img.src = qrUrl;
-                await new Promise((resolve) => {
-                    img.onload = () => {
-                        docPdf.addImage(img, 'PNG', 15, finalY, 30, 30);
-                        resolve();
-                    };
-                    img.onerror = () => resolve();
-                });
-            } catch (qrErr) { console.warn("QR skip"); }
-
-            // 8. Footer & Signature
+            // 8. Footer
             docPdf.setFontSize(10);
+            docPdf.setFont("helvetica", "bold"); 
+            docPdf.text(`Total Amount Paid:`, 15, finalY);
             docPdf.setFont("helvetica", "normal"); 
-            docPdf.text(`Total Amount Paid: Rs. ${paid}`, 50, finalY + 10);
-            docPdf.text(`Payment Mode: ${modeStr}`, 50, finalY + 18);
+            docPdf.text(`Rs. ${paid}`, 55, finalY);
+            
+            docPdf.setFont("helvetica", "bold"); 
+            docPdf.text(`Payment Mode:`, 15, finalY + 8);
+            docPdf.setFont("helvetica", "normal"); 
+            docPdf.text(modeStr, 55, finalY + 8);
 
             docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
             docPdf.setFont("helvetica", "bold"); 
-            docPdf.text(`For ${headTxt}`, 160, finalY + 10, { align: "center" });
+            docPdf.text(`For ${headTxt}`, 160, finalY, { align: "center" });
             
             if (settings.signatureBase64) {
-                docPdf.addImage(settings.signatureBase64, 'PNG', 140, finalY + 12, 40, 15, '', 'NONE');
+                docPdf.addImage(settings.signatureBase64, 'PNG', 140, finalY + 2, 40, 15, '', 'NONE');
             } else {
-                docPdf.setTextColor(hColor.r, hColor.g, hColor.b);
+                docPdf.setTextColor(67, 97, 238);
                 docPdf.setFont("helvetica", "italic"); 
                 docPdf.setFontSize(14);
-                docPdf.text("Digital Signature", 160, finalY + 22, { align: "center" });
+                docPdf.text("Digital Signature", 160, finalY + 12, { align: "center" });
                 docPdf.setTextColor(tColor.r, tColor.g, tColor.b);
             }
             
             docPdf.setFontSize(10);
-            docPdf.setFont("helvetica", "normal"); 
-            docPdf.text("Authorized Signatory", 160, finalY + 32, { align: "center" });
+            docPdf.setFont("helvetica", "bold"); 
+            docPdf.text("Authorized Signatory", 160, finalY + 22, { align: "center" });
 
             docPdf.setFontSize(8);
+            docPdf.setFont("helvetica", "normal");
             docPdf.setTextColor(150, 150, 150);
             docPdf.text("This is a digitally generated document and does not require a physical signature.", 105, 285, { align: "center" });
 
             if(action === 'whatsapp') {
-                // Download the PDF instantly so the user has it ready to attach manually
+                if(btnElement) { btnElement.disabled = true; btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...'; }
                 docPdf.save(`Sharing_Certificate_${t.name}_${monthStr}.pdf`);
                 
-                // Prepare and send the WhatsApp text message
+                if(btnElement) { btnElement.disabled = false; btnElement.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Send'; }
+                
                 let phoneNum = (t.whatsapp || "").replace(/\D/g, '');
                 if (phoneNum.length === 10) phoneNum = "91" + phoneNum;
                 const waMsg = `Hello ${t.name},\nYour Salary/Sharing details for the month of ${displayMonth} have been processed.\nTotal Earned: ₹${earned}\nTotal Paid: ₹${paid}\n\nI am attaching your official certificate below.\n\nThank you!\n- ${headTxt}`;
                 const waUrl = `https://wa.me/${phoneNum}?text=${encodeURIComponent(waMsg)}`;
                 
-                // Slight delay to allow the download to trigger before navigating away
                 setTimeout(() => {
                     window.open(waUrl, '_blank');
                 }, 500);
@@ -2612,7 +2625,7 @@
             if(!s) return;
             
             document.getElementById('sd-name').innerText = s.name;
-            document.getElementById('sd-parent').innerText = s.parentName;
+            document.getElementById('sd-parent').innerText = s.parentName || 'N/A';
             document.getElementById('sd-class').innerText = `${s.std||''} | ${s.board||''} | ${s.medium||''}`;
             document.getElementById('sd-join').innerText = new Date(s.joinDate).toLocaleDateString('en-IN');
             document.getElementById('sd-fee').innerText = `₹${s.monthlyFees} /mo`;
@@ -2868,7 +2881,6 @@
         };
 
         // ================= MAIN FORM LOGIC =================
-        
         // Search Student Listener
         document.getElementById('search-student')?.addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase();
@@ -2900,8 +2912,8 @@
                     medium: document.getElementById('s-medium').value,
                     whatsapp: document.getElementById('s-whatsapp').value,
                     joinDate: document.getElementById('s-joindate').value,
-                    studyMode: document.getElementById('s-study-mode').value, // Add Study Mode
-                    teacherId: selectedTeachers, // Array of selected teachers
+                    studyMode: document.getElementById('s-study-mode').value,
+                    teacherId: selectedTeachers,
                     monthlyFees: parseFloat(document.getElementById('s-fees').value),
                     status: 'active'
                 };
@@ -2915,11 +2927,30 @@
                     payload.lastPaidMonth = '';
                     await addDoc(collection(db, 'students'), payload);
                 }
+                
+                alert("Student saved successfully!");
                 window.closeModal('modal-add-student');
                 e.target.reset();
             } catch (err) {
-                console.error("[STUDENT] Firebase save failed.", err);
-                alert("Error saving student.");
+                console.error("[STUDENT] Firebase save failed. Fallback to LocalStorage.", err);
+                const teacherSelect = document.getElementById('s-teacher');
+                const selectedTeachers = Array.from(teacherSelect.selectedOptions).map(opt => opt.value).filter(v => v !== '');
+                const payload = {
+                    name: document.getElementById('s-name').value,
+                    whatsapp: document.getElementById('s-whatsapp').value,
+                    teacherId: selectedTeachers,
+                    monthlyFees: parseFloat(document.getElementById('s-fees').value),
+                    status: 'active',
+                    id: 'local_' + Date.now()
+                };
+                
+                let offlineStudents = JSON.parse(localStorage.getItem('offline_students') || '[]');
+                offlineStudents.push(payload);
+                localStorage.setItem('offline_students', JSON.stringify(offlineStudents));
+                
+                alert("Saved locally (Offline Mode)!");
+                window.closeModal('modal-add-student');
+                e.target.reset();
             } finally {
                 btn.innerHTML = origText;
                 btn.disabled = false;
@@ -3073,7 +3104,6 @@
                 try {
                     payload.createdAt = serverTimestamp();
                     await addDoc(collection(db, 'transactions'), payload);
-                    const currentStudent = window.data.students.find(s=>s.id===window.currentFeeProcess.studentId);
                     if(currentStudent && (!currentStudent.lastPaidMonth || selectedMonth > currentStudent.lastPaidMonth)) {
                         await updateDoc(doc(db, 'students', window.currentFeeProcess.studentId), { lastPaidMonth: selectedMonth });
                     }
