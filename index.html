@@ -10,6 +10,25 @@
     <link rel="apple-touch-icon" id="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
     <meta name="theme-color" content="#4f46e5">
 
+    <script>
+        // Immediately inject a valid manifest to satisfy browser PWA requirements on load
+        const defaultManifest = {
+            "name": "Nurani Tuition Classes",
+            "short_name": "Nurani",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#f8fafc",
+            "theme_color": "#4f46e5",
+            "icons": [{
+                "src": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                "sizes": "512x512",
+                "type": "image/png"
+            }]
+        };
+        const manifestDataUri = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(defaultManifest));
+        document.getElementById('manifest-link').setAttribute('href', manifestDataUri);
+    </script>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
@@ -17,8 +36,6 @@
     <!-- jsPDF for Receipt Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
-    <!-- Chart.js for 3D/Visual Graphs -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script>
         tailwind.config = {
@@ -40,12 +57,25 @@
             document.documentElement.classList.remove('dark');
         }
         
-        // --- PWA Service Worker (Fixed Blob Protocol Error) ---
+        // --- PWA Service Worker (Advanced Single-File Fallback) ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Attempt to register a standard Service Worker file instead of a blocked Blob URL
-                navigator.serviceWorker.register('./sw.js').catch(err => {
-                    console.log('PWA Service Worker skipped: A standard sw.js file is required for full offline mode.');
+                // To pass Chrome's strict PWA checks, we need a Service Worker with a fetch handler.
+                const swCode = `
+                    self.addEventListener('install', e => self.skipWaiting());
+                    self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+                    self.addEventListener('fetch', e => { 
+                        // Empty fetch handler is required by Chromium for PWA installability
+                    });
+                `;
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+                
+                navigator.serviceWorker.register(swUrl).then(() => {
+                    console.log('PWA Service Worker registered successfully.');
+                }).catch(err => {
+                    console.log('Blob SW fallback failed. Trying standard sw.js.', err);
+                    navigator.serviceWorker.register('./sw.js').catch(e => console.log('No sw.js found.'));
                 });
             });
         }
@@ -257,7 +287,7 @@
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <h3 class="text-xl font-bold text-slate-800 dark:text-white">Overview</h3>
                         <button onclick="window.toggle3D()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-indigo-200 dark:shadow-none text-sm flex items-center justify-center gap-2">
-                            <span id="btn-3d-text"><i class="fa-solid fa-chart-column"></i> View Charts Analysis</span>
+                            <span id="btn-3d-text"><i class="fa-solid fa-chart-column"></i> View P&L Analysis</span>
                         </button>
                     </div>
 
@@ -302,7 +332,7 @@
                     </div>
 
                     <!-- 3D Charts Container (Hidden by default) -->
-                    <div id="charts-container" class="chart-3d-container grid grid-cols-1 lg:grid-cols-3 gap-6 bg-transparent">
+                    <div id="charts-container" class="chart-3d-container grid grid-cols-1 md:max-w-md gap-6 bg-transparent">
                         <!-- P&L Summary Card -->
                         <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xl flex flex-col justify-center">
                             <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-2 border-b pb-2 dark:border-slate-700"><i class="fa-solid fa-magnifying-glass-chart text-indigo-500 mr-2"></i> P&L Analysis</h4>
@@ -319,16 +349,6 @@
                                     <p class="text-xs text-slate-500 dark:text-slate-400">Net Profit Margin</p>
                                     <p id="analysis-margin" class="text-2xl font-black text-indigo-600">0%</p>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xl lg:col-span-1">
-                            <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-4 text-center">Income vs Expenses</h4>
-                            <canvas id="barChart" height="250"></canvas>
-                        </div>
-                        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xl flex flex-col items-center lg:col-span-1">
-                            <h4 class="font-bold text-slate-800 dark:text-slate-100 mb-4 text-center">Revenue Distribution</h4>
-                            <div class="w-full max-w-[200px]">
-                                <canvas id="pieChart"></canvas>
                             </div>
                         </div>
                     </div>
@@ -368,9 +388,26 @@
                 <!-- ================= VIEW: STUDENTS ================= -->
                 <div id="view-students" class="view-section hidden-view space-y-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div class="relative w-full sm:w-auto">
-                            <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                            <input type="text" id="search-student" placeholder="Search students..." class="w-full sm:w-64 pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            <div class="relative w-full sm:w-auto">
+                                <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                                <input type="text" id="search-student" placeholder="Search students..." class="w-full sm:w-64 pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                            </div>
+                            <select id="filter-study-mode" class="w-full sm:w-auto px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                                <option value="All">All Modes</option>
+                                <option value="Offline">Offline</option>
+                                <option value="Online">Online</option>
+                                <option value="Home Tuition">Home Tuition</option>
+                            </select>
+                            <select id="filter-std" class="w-full sm:w-auto px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                                <option value="All">All Standards</option>
+                                <option value="1st">1st</option><option value="2nd">2nd</option><option value="3rd">3rd</option>
+                                <option value="4th">4th</option><option value="5th">5th</option><option value="6th">6th</option>
+                                <option value="7th">7th</option><option value="8th">8th</option><option value="9th">9th</option>
+                                <option value="10th">10th</option>
+                                <option value="11th Science">11th Science</option><option value="11th Commerce">11th Commerce</option><option value="11th Arts">11th Arts</option>
+                                <option value="12th Science">12th Science</option><option value="12th Commerce">12th Commerce</option><option value="12th Arts">12th Arts</option>
+                            </select>
                         </div>
                         <button onclick="window.openModal('modal-add-student', true)" class="w-full sm:w-auto bg-primary hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex justify-center items-center">
                             <i class="fa-solid fa-plus mr-2"></i> Add Student
@@ -824,6 +861,7 @@
                         <select id="s-study-mode" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
                             <option value="Offline">Offline</option>
                             <option value="Online">Online</option>
+                            <option value="Home Tuition">Home Tuition</option>
                         </select>
                     </div>
                 </div>
@@ -921,12 +959,17 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Subject</label>
-                    <input type="text" id="t-subject" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                    <input type="text" id="t-subject" list="subject-list" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. Mathematics">
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Revenue Share (%)</label>
-                    <input type="number" id="t-share" min="0" max="100" required placeholder="e.g. 60" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Percentage of student fees given to this teacher.</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Regular Share (%)</label>
+                        <input type="number" id="t-share" min="0" max="100" required placeholder="e.g. 60" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Home Tuition Share (%)</label>
+                        <input type="number" id="t-share-home" min="0" max="100" required placeholder="e.g. 70" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">WhatsApp Number</label>
@@ -1106,6 +1149,11 @@
         <option value="11th Science"><option value="11th Commerce"><option value="11th Arts">
         <option value="12th Science"><option value="12th Commerce"><option value="12th Arts">
     </datalist>
+    <datalist id="subject-list">
+        <option value="All Subjects"><option value="Mathematics"><option value="Science"><option value="Physics"><option value="Chemistry">
+        <option value="Biology"><option value="Accountancy"><option value="Statistics"><option value="Economics"><option value="Business Studies">
+        <option value="English"><option value="Hindi"><option value="Gujarati"><option value="Social Science"><option value="Computer Science">
+    </datalist>
     <datalist id="ledger-options"></datalist>
     <datalist id="bank-list">
         <option value="SBI"><option value="HDFC Bank"><option value="ICICI Bank"><option value="Axis Bank">
@@ -1191,13 +1239,10 @@
             if(charts) {
                 if (charts.classList.contains('chart-3d-active')) {
                     charts.classList.remove('chart-3d-active');
-                    if(btnText) btnText.innerHTML = '<i class="fa-solid fa-chart-column"></i> View Charts Analysis';
+                    if(btnText) btnText.innerHTML = '<i class="fa-solid fa-chart-column"></i> View P&L Analysis';
                 } else {
                     charts.classList.add('chart-3d-active');
-                    if(btnText) btnText.innerHTML = '<i class="fa-solid fa-chart-column"></i> Hide Charts Analysis';
-                    if(window.renderCharts && window.lastChartData) {
-                        window.renderCharts(window.lastChartData.rev, window.lastChartData.exp, window.lastChartData.tEarned, window.lastChartData.netProfit);
-                    }
+                    if(btnText) btnText.innerHTML = '<i class="fa-solid fa-chart-column"></i> Hide P&L Analysis';
                 }
             }
         };
@@ -1270,8 +1315,9 @@
                         let share = 0;
                         if (tx.teacherShares && tx.teacherShares[teacherId]) {
                             share = tx.teacherShares[teacherId];
-                        } else if (tx.teacherId === teacherId) {
+                        } else if (Array.isArray(tx.teacherId) ? tx.teacherId.includes(teacherId) : tx.teacherId === teacherId) {
                             share = parseFloat(tx.teacherShare) || 0;
+                            if (Array.isArray(tx.teacherId) && tx.teacherId.length > 0) share = Math.round(share / tx.teacherId.length);
                         }
                         
                         total += share;
@@ -1589,7 +1635,10 @@
                             <div class="flex justify-between items-start mb-4">
                                 <div><h3 class="font-bold text-lg text-slate-800 dark:text-white">${t.name}</h3><span class="bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-xs px-2 py-1 rounded-md font-medium">${t.subject}</span></div>
                                 <div class="flex flex-col items-end gap-2">
-                                    <div class="bg-green-50 dark:bg-green-900/50 text-green-700 dark:text-green-400 text-sm font-bold px-2 py-1 rounded-lg">${t.share}% Share</div>
+                                    <div class="bg-green-50 dark:bg-green-900/50 text-green-700 dark:text-green-400 text-sm font-bold px-2 py-1 rounded-lg text-center leading-tight">
+                                        <span class="block">${t.share}% <span class="text-[10px] font-normal">Reg</span></span>
+                                        <span class="block border-t border-green-200 dark:border-green-700/50 mt-0.5 pt-0.5">${t.homeShare || t.share}% <span class="text-[10px] font-normal">Home</span></span>
+                                    </div>
                                     <div class="flex gap-3 mt-1 text-lg">
                                         <button onclick="window.sendWhatsApp('${t.whatsapp || ''}', 'Hello ${t.name},')" class="text-green-500 hover:text-green-700 transition-colors" title="WhatsApp Teacher"><i class="fa-brands fa-whatsapp"></i></button>
                                         <button onclick="window.editTeacher('${t.id}')" class="text-blue-500 hover:text-blue-700 transition-colors" title="Edit Teacher"><i class="fa-solid fa-pen-to-square"></i></button>
@@ -1647,10 +1696,12 @@
                 let statusHtml = dueData.months === 0 ? `<span class="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-400 px-2 py-1 rounded text-xs font-bold block mb-1 text-center"><i class="fa-solid fa-check mr-1"></i> Paid</span>` : `<span class="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400 px-2 py-1 rounded text-xs font-bold block mb-1 text-center shadow-sm border border-red-200 dark:border-red-800"><i class="fa-solid fa-clock mr-1"></i> ${dueData.months} Mo. Due</span>`;
                 const dueText = dueData.months > 0 ? `<p class="text-xs text-red-600 dark:text-red-400 font-bold text-center mt-1">Total: ₹${dueData.amt}</p>` : `<p class="text-xs text-green-600 dark:text-green-400 font-bold text-center mt-1">No Dues</p>`;
                 
-                const studyModeLabel = s.studyMode === 'Online' ? `<span class="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1 rounded ml-1">Online</span>` : '';
+                let studyModeLabel = '';
+                if(s.studyMode === 'Online') studyModeLabel = `<span class="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1 rounded ml-1">Online</span>`;
+                else if(s.studyMode === 'Home Tuition') studyModeLabel = `<span class="text-[10px] text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-1 rounded ml-1">Home</span>`;
 
                 list.innerHTML += `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
+                    <tr data-mode="${s.studyMode || 'Offline'}" data-std="${s.std || ''}" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
                         <td class="py-3 px-6">
                             <p class="font-bold text-slate-800 dark:text-slate-100">${s.name} ${studyModeLabel}</p>
                             <p class="text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 inline-block px-1 rounded mt-0.5">${[s.std, s.board, s.medium].filter(Boolean).join(' | ')}</p>
@@ -1902,10 +1953,9 @@
                         }
                     ]
                 };
-                const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-                const manifestURL = URL.createObjectURL(blob);
+                const manifestDataUri = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(manifest));
                 const link = document.getElementById('manifest-link');
-                if(link) link.setAttribute('href', manifestURL);
+                if(link) link.setAttribute('href', manifestDataUri);
                 
                 let appleIcon = document.getElementById('apple-touch-icon');
                 if(!appleIcon) {
@@ -2431,13 +2481,15 @@
             if(!monthStr) return alert("Please select a month to generate certificate!");
             
             const t = window.data.teachers.find(x=>x.id===tId);
-            const fees = window.data.transactions.filter(tx => tx.type === 'fee' && tx.teacherId === tId && tx.feeMonth === monthStr);
+            const fees = window.data.transactions.filter(tx => tx.type === 'fee' && (Array.isArray(tx.teacherId) ? tx.teacherId.includes(tId) : tx.teacherId === tId) && tx.feeMonth === monthStr);
             const payouts = window.data.transactions.filter(tx => tx.type === 'teacher_payout' && tx.teacherId === tId && tx.date.startsWith(monthStr));
             
             let earned = 0; let bodyData = [];
             fees.forEach((f, index) => {
-                earned += (f.teacherShare || 0);
-                bodyData.push([index + 1, f.studentName, `Rs. ${f.amount}`, `Rs. ${f.teacherShare || 0}`]);
+                let currentShare = (f.teacherShares && f.teacherShares[tId]) ? f.teacherShares[tId] : (f.teacherShare || 0);
+                if (!f.teacherShares && Array.isArray(f.teacherId) && f.teacherId.length > 0) currentShare = Math.round(currentShare / f.teacherId.length);
+                earned += currentShare;
+                bodyData.push([index + 1, f.studentName, `Rs. ${f.amount}`, `Rs. ${currentShare}`]);
             });
             
             let paid = 0; let modes = new Set();
@@ -2720,7 +2772,8 @@
                     stdListEl.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-slate-400">No students assigned yet.</td></tr>`;
                 } else {
                     assignedStudents.forEach(s => {
-                        const expShare = Math.round((s.monthlyFees * t.share) / 100);
+                        const tSharePct = s.studyMode === 'Home Tuition' ? (t.homeShare || t.share) : t.share;
+                        const expShare = Math.round((s.monthlyFees * tSharePct) / 100);
                         stdListEl.innerHTML += `
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-50 dark:border-slate-700">
                                 <td class="py-2 px-4 font-medium">${s.name}</td>
@@ -2761,6 +2814,7 @@
             document.getElementById('t-name').value = t.name;
             document.getElementById('t-subject').value = t.subject || '';
             document.getElementById('t-share').value = t.share || '';
+            document.getElementById('t-share-home').value = t.homeShare || t.share || '';
             document.getElementById('t-whatsapp').value = t.whatsapp || '';
             document.getElementById('teacher-modal-title').innerText = 'Edit Teacher Details';
             window.openModal('modal-add-teacher');
@@ -2795,7 +2849,7 @@
             const t = window.data.teachers.find(x => x.id === id);
             if(!t) return;
             
-            const teacherEarned = window.data.transactions.filter(tx => tx.type === 'fee' && tx.teacherId === id).reduce((sum, tx) => sum + (tx.teacherShare||0), 0);
+            const { total: teacherEarned } = window.calculateTeacherSalary(id);
             const teacherPaid = window.data.transactions.filter(tx => tx.type === 'teacher_payout' && tx.teacherId === id).reduce((sum, tx) => sum + tx.amount, 0);
             const pendingAmount = teacherEarned - teacherPaid;
             
@@ -2826,7 +2880,8 @@
                     if (!tid) return;
                     const t = (window.data.teachers || []).find(x => x.id === tid);
                     if (t) {
-                        const share = Math.round((amt * t.share) / 100);
+                        const tSharePct = s.studyMode === 'Home Tuition' ? (t.homeShare || t.share) : t.share;
+                        const share = Math.round((amt * tSharePct) / 100);
                         tShareAmt += share;
                         teacherSharesMap[tid] = share;
                         tNames.push(t.name);
@@ -2835,7 +2890,8 @@
             } else if (s.teacherId) {
                 const t = (window.data.teachers || []).find(x => x.id === s.teacherId);
                 if (t) {
-                    tShareAmt = Math.round((amt * t.share) / 100);
+                    const tSharePct = s.studyMode === 'Home Tuition' ? (t.homeShare || t.share) : t.share;
+                    tShareAmt = Math.round((amt * tSharePct) / 100);
                     teacherSharesMap[t.id] = tShareAmt;
                     tNames.push(t.name);
                 }
@@ -2881,15 +2937,26 @@
         };
 
         // ================= MAIN FORM LOGIC =================
-        // Search Student Listener
-        document.getElementById('search-student')?.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
+        // Search & Filter Student Listeners
+        window.filterStudentsTable = function() {
+            const query = (document.getElementById('search-student')?.value || '').toLowerCase();
+            const modeFilter = document.getElementById('filter-study-mode')?.value || 'All';
+            const stdFilter = document.getElementById('filter-std')?.value || 'All';
             const rows = document.querySelectorAll('#students-list tr');
             rows.forEach(row => {
-                const name = row.cells[0].textContent.toLowerCase();
-                row.style.display = name.includes(query) ? '' : 'none';
+                const nameCell = row.cells[0].textContent.toLowerCase();
+                const rowMode = row.getAttribute('data-mode') || 'Offline';
+                const rowStd = row.getAttribute('data-std') || '';
+                const matchesSearch = nameCell.includes(query);
+                const matchesMode = (modeFilter === 'All' || rowMode === modeFilter);
+                const matchesStd = (stdFilter === 'All' || rowStd === stdFilter);
+                row.style.display = (matchesSearch && matchesMode && matchesStd) ? '' : 'none';
             });
-        });
+        };
+
+        document.getElementById('search-student')?.addEventListener('input', window.filterStudentsTable);
+        document.getElementById('filter-study-mode')?.addEventListener('change', window.filterStudentsTable);
+        document.getElementById('filter-std')?.addEventListener('change', window.filterStudentsTable);
 
         // Form Submit Listeners - explicitly bound to window to avoid module scope trapping
         document.getElementById('form-student')?.addEventListener('submit', async (e) => {
@@ -2964,6 +3031,7 @@
                 name: document.getElementById('t-name').value,
                 subject: document.getElementById('t-subject').value,
                 share: parseFloat(document.getElementById('t-share').value),
+                homeShare: parseFloat(document.getElementById('t-share-home').value) || parseFloat(document.getElementById('t-share').value),
                 whatsapp: document.getElementById('t-whatsapp').value
             };
             if (id) {
