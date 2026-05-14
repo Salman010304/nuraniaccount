@@ -399,6 +399,9 @@
                                 <option value="Online">Online</option>
                                 <option value="Home Tuition">Home Tuition</option>
                             </select>
+                            <select id="filter-branch-student" class="w-full sm:w-auto px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                                <option value="All">All Branches</option>
+                            </select>
                             <select id="filter-std" class="w-full sm:w-auto px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
                                 <option value="All">All Standards</option>
                                 <option value="1st">1st</option><option value="2nd">2nd</option><option value="3rd">3rd</option>
@@ -561,6 +564,9 @@
                                     <span class="text-slate-400 text-sm">to</span>
                                     <input type="date" id="filter-end" class="flex-1 sm:flex-none px-2 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-1 focus:ring-primary outline-none">
                                 </div>
+                                <select id="filter-branch-account" class="w-full sm:w-auto px-3 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-1 focus:ring-primary outline-none">
+                                    <option value="All">All Branches</option>
+                                </select>
                                 <div class="flex gap-2 w-full sm:w-auto">
                                     <button onclick="window.applyAccountFilter()" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">Filter</button>
                                     <button onclick="window.clearAccountFilter()" class="flex-1 sm:flex-none bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">Clear</button>
@@ -678,6 +684,19 @@
                                 </button>
                             </div>
                         </form>
+
+                        <!-- BRANCH MANAGEMENT SECTION -->
+                        <div class="p-6 border-t border-slate-200 dark:border-slate-700 space-y-4 bg-white dark:bg-slate-800">
+                            <h4 class="font-bold text-slate-800 dark:text-white mb-2"><i class="fa-solid fa-code-branch mr-2 text-indigo-500"></i> Manage Branches</h4>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mb-2">Add or remove predefined branches for your dropdown menus.</p>
+                            <div class="flex gap-2">
+                                <input type="text" id="setting-new-branch" placeholder="e.g. South Branch" class="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                                <button type="button" onclick="window.addBranch()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold transition-colors">Add</button>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mt-3" id="settings-branch-list">
+                                <!-- Badges populated via JS -->
+                            </div>
+                        </div>
 
                         <!-- DATA MANAGEMENT SECTION -->
                         <div class="p-6 border-t border-slate-200 dark:border-slate-700 space-y-4 bg-slate-50 dark:bg-slate-900/20">
@@ -823,6 +842,14 @@
                         <input type="text" id="s-parent" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
                     </div>
                 </div>
+                <div class="grid grid-cols-1 mt-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Branch</label>
+                        <select id="s-branch" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                            <option value="Main Branch">Main Branch</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="grid grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Standard</label>
@@ -910,8 +937,27 @@
                 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Fee Month</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Starting Fee Month</label>
                         <input type="month" id="fee-month" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Number of Months</label>
+                        <select id="fee-months-count" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none" onchange="window.updateFeeTotals()">
+                            <option value="1">1 Month</option>
+                            <option value="2">2 Months</option>
+                            <option value="3">3 Months</option>
+                            <option value="4">4 Months</option>
+                            <option value="5">5 Months</option>
+                            <option value="6">6 Months</option>
+                            <option value="12">12 Months</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Amount (₹)</label>
+                        <input type="number" id="fee-amount-input" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none" oninput="window.handleManualFeeEdit()">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Payment Date</label>
@@ -919,7 +965,7 @@
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-4 mt-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Payment Mode</label>
                         <select id="fee-mode" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none" onchange="window.toggleBankInput('fee-mode', 'bank-input-container', 'fee-bank')">
@@ -953,9 +999,17 @@
             </div>
             <form id="form-teacher" class="p-6 space-y-4">
                 <input type="hidden" id="t-id">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Teacher Name</label>
-                    <input type="text" id="t-name" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Teacher Name</label>
+                        <input type="text" id="t-name" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Branch</label>
+                        <select id="t-branch" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                            <option value="Main Branch">Main Branch</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Subject</label>
@@ -1054,10 +1108,16 @@
                 <input type="hidden" id="pt-id">
                 
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2">
+                    <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Paying Amount (₹)</label>
                         <input type="number" id="pt-amount" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Payment Date</label>
+                        <input type="date" id="pt-date" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mt-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Payment Mode</label>
                         <select id="pt-mode" class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none" onchange="window.toggleBankInput('pt-mode', 'pt-bank-container', 'pt-bank')">
@@ -1088,9 +1148,17 @@
                 <button onclick="window.closeModal('modal-add-expense')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-times text-xl"></i></button>
             </div>
             <form id="form-expense" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description (e.g. Rent)</label>
-                    <input type="text" id="e-desc" list="ledger-options" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description (e.g. Rent)</label>
+                        <input type="text" id="e-desc" list="ledger-options" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Branch</label>
+                        <select id="e-branch" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                            <option value="Main Branch">Main Branch</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -1119,9 +1187,17 @@
                 <button onclick="window.closeModal('modal-add-asset')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-times text-xl"></i></button>
             </div>
             <form id="form-asset" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Asset Name</label>
-                    <input type="text" id="a-desc" list="ledger-options" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Asset Name</label>
+                        <input type="text" id="a-desc" list="ledger-options" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Branch</label>
+                        <select id="a-branch" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
+                            <option value="Main Branch">Main Branch</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -1159,6 +1235,7 @@
         <option value="SBI"><option value="HDFC Bank"><option value="ICICI Bank"><option value="Axis Bank">
         <option value="Kotak Mahindra"><option value="Bank of Baroda"><option value="Punjab National Bank">
     </datalist>
+    <datalist id="branch-list"></datalist>
 
     <!-- ================= JAVASCRIPT LOGIC ================= -->
     <script type="module">
@@ -1201,6 +1278,8 @@
                 if(fs) fs.reset();
                 const sid = document.getElementById('s-id');
                 if(sid) sid.value = '';
+                const sbranch = document.getElementById('s-branch');
+                if(sbranch) sbranch.value = 'Main Branch';
                 const title = document.getElementById('student-modal-title');
                 if(title) title.innerText = 'Add New Student';
                 const btn = document.getElementById('btn-save-student');
@@ -1214,6 +1293,8 @@
                 if(ft) ft.reset();
                 const tid = document.getElementById('t-id');
                 if(tid) tid.value = '';
+                const tbranch = document.getElementById('t-branch');
+                if(tbranch) tbranch.value = 'Main Branch';
                 const title = document.getElementById('teacher-modal-title');
                 if(title) title.innerText = 'Add New Teacher';
             }
@@ -1259,6 +1340,88 @@
             }
         };
 
+        window.handleManualFeeEdit = function() {
+            if(!window.currentFeeProcess) return;
+            const newAmount = parseFloat(document.getElementById('fee-amount-input').value) || 0;
+            const monthsCount = parseInt(document.getElementById('fee-months-count').value) || 1;
+            
+            // Expected amount for selected months
+            let expectedAmount = 0;
+            if (window.currentFeeProcess.isFirstMonth) {
+                expectedAmount = window.currentFeeProcess.baseAmount + (window.currentFeeProcess.standardMonthlyFee * (monthsCount - 1));
+            } else {
+                expectedAmount = window.currentFeeProcess.standardMonthlyFee * monthsCount;
+            }
+
+            const ratio = expectedAmount > 0 ? (newAmount / expectedAmount) : 1;
+            
+            let updatedShares = {};
+            let tShareSum = 0;
+            
+            let expectedTeacherShares = {};
+            
+            // Recalculate expected shares for `monthsCount`
+            if (window.currentFeeProcess.teacherId && window.currentFeeProcess.teacherId.length > 0) {
+                let teacherIds = Array.isArray(window.currentFeeProcess.teacherId) ? window.currentFeeProcess.teacherId : [window.currentFeeProcess.teacherId];
+                
+                teacherIds.forEach(tid => {
+                    const t = (window.data.teachers || []).find(x => x.id === tid);
+                    if (t) {
+                        const tSharePct = window.currentFeeProcess.studyMode === 'Home Tuition' ? (t.homeShare || t.share) : t.share;
+                        let shareForThisTeacher = 0;
+                        if (window.currentFeeProcess.isFirstMonth) {
+                            shareForThisTeacher = (window.currentFeeProcess.baseAmount * tSharePct / 100) + ((window.currentFeeProcess.standardMonthlyFee * (monthsCount - 1)) * tSharePct / 100);
+                        } else {
+                            shareForThisTeacher = expectedAmount * tSharePct / 100;
+                        }
+                        
+                        // Handle multiple teachers split
+                        if (Array.isArray(window.currentFeeProcess.teacherId) && window.currentFeeProcess.teacherId.length > 0) {
+                            shareForThisTeacher = shareForThisTeacher / window.currentFeeProcess.teacherId.length;
+                        }
+                        
+                        expectedTeacherShares[tid] = shareForThisTeacher;
+                    }
+                });
+            }
+
+            // Apply ratio for manually discounted/edited amount
+            for(let tid in expectedTeacherShares) {
+                const finalShare = Math.round(expectedTeacherShares[tid] * ratio);
+                updatedShares[tid] = finalShare;
+                tShareSum += finalShare;
+            }
+            
+            const newProfit = newAmount - tShareSum;
+            
+            document.getElementById('fee-amount').innerText = '₹' + newAmount;
+            document.getElementById('fee-teacher-share').innerText = '₹' + tShareSum;
+            document.getElementById('fee-profit').innerText = '₹' + newProfit;
+            
+            window.currentFeeProcess.amount = newAmount;
+            window.currentFeeProcess.teacherShare = tShareSum;
+            window.currentFeeProcess.profit = newProfit;
+            window.currentFeeProcess.teacherShares = updatedShares;
+            window.currentFeeProcess.monthsCount = monthsCount;
+        };
+
+        window.updateFeeTotals = function() {
+            if(!window.currentFeeProcess) return;
+            const monthsCount = parseInt(document.getElementById('fee-months-count').value) || 1;
+            
+            let newAmount = 0;
+            if (window.currentFeeProcess.isFirstMonth) {
+                newAmount = window.currentFeeProcess.baseAmount + (window.currentFeeProcess.standardMonthlyFee * (monthsCount - 1));
+            } else {
+                newAmount = window.currentFeeProcess.standardMonthlyFee * monthsCount;
+            }
+            
+            const amountInput = document.getElementById('fee-amount-input');
+            if(amountInput) amountInput.value = newAmount;
+            
+            window.handleManualFeeEdit();
+        };
+
         window.calcStudentDue = function(s) {
             const now = new Date();
             let months = [];
@@ -1271,7 +1434,15 @@
             const allMonthsSinceJoin = months;
             
             const paidTxs = window.data.transactions.filter(tx => tx.type === 'fee' && tx.studentId === s.id && tx.feeMonth);
-            const paidMonths = paidTxs.map(tx => tx.feeMonth);
+            let paidMonths = [];
+            paidTxs.forEach(tx => {
+                let d = new Date(tx.feeMonth + "-01");
+                let c = tx.feeMonthsCount || 1;
+                for(let i = 0; i < c; i++) {
+                    paidMonths.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+                    d.setMonth(d.getMonth() + 1);
+                }
+            });
             const pendingMonthsList = allMonthsSinceJoin.filter(m => !paidMonths.includes(m));
             
             let dueAmt = 0;
@@ -1616,8 +1787,61 @@
             reader.readAsText(file);
         };
 
+        // ================= BRANCH DROPDOWN LOGIC =================
+        window.updateBranchDropdowns = function() {
+            const branches = new Set(window.data.settings?.branches || ['Main Branch']);
+            (window.data.students || []).forEach(s => { if(s.branch) branches.add(s.branch); });
+            (window.data.teachers || []).forEach(t => { if(t.branch) branches.add(t.branch); });
+            
+            const optionsHtml = Array.from(branches).map(b => `<option value="${b}">${b}</option>`).join('');
+            
+            ['s-branch', 't-branch', 'e-branch', 'a-branch'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const currentVal = el.value;
+                    el.innerHTML = optionsHtml;
+                    if (currentVal && Array.from(branches).includes(currentVal)) {
+                        el.value = currentVal;
+                    }
+                }
+            });
+            
+            const fBranchStudent = document.getElementById('filter-branch-student');
+            if(fBranchStudent) {
+                const currentStudentFilter = fBranchStudent.value || 'All';
+                fBranchStudent.innerHTML = `<option value="All">All Branches</option>` + optionsHtml;
+                fBranchStudent.value = currentStudentFilter;
+            }
+            
+            const fBranchAcc = document.getElementById('filter-branch-account');
+            if(fBranchAcc) {
+                const currentAccFilter = fBranchAcc.value || 'All';
+                fBranchAcc.innerHTML = `<option value="All">All Branches</option>` + optionsHtml;
+                fBranchAcc.value = currentAccFilter;
+            }
+        };
+
 
         // ================= RENDERING FUNCTIONS =================
+        window.filterStudentsTable = function() {
+            const query = (document.getElementById('search-student')?.value || '').toLowerCase();
+            const modeFilter = document.getElementById('filter-study-mode')?.value || 'All';
+            const branchFilter = document.getElementById('filter-branch-student')?.value || 'All';
+            const stdFilter = document.getElementById('filter-std')?.value || 'All';
+            const rows = document.querySelectorAll('#students-list tr');
+            rows.forEach(row => {
+                const nameCell = row.cells[0].textContent.toLowerCase();
+                const rowMode = row.getAttribute('data-mode') || 'Offline';
+                const rowStd = row.getAttribute('data-std') || '';
+                const rowBranch = row.getAttribute('data-branch') || 'Main Branch';
+                const matchesSearch = nameCell.includes(query);
+                const matchesMode = (modeFilter === 'All' || rowMode === modeFilter);
+                const matchesBranch = (branchFilter === 'All' || rowBranch === branchFilter);
+                const matchesStd = (stdFilter === 'All' || rowStd === stdFilter);
+                row.style.display = (matchesSearch && matchesMode && matchesStd && matchesBranch) ? '' : 'none';
+            });
+        };
+
         window.renderTeachers = function() {
             const list = document.getElementById('teachers-list'); 
             if (!list) return;
@@ -1633,7 +1857,11 @@
                     <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col justify-between hover:shadow-md transition-shadow">
                         <div>
                             <div class="flex justify-between items-start mb-4">
-                                <div><h3 class="font-bold text-lg text-slate-800 dark:text-white">${t.name}</h3><span class="bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-xs px-2 py-1 rounded-md font-medium">${t.subject}</span></div>
+                                <div>
+                                    <h3 class="font-bold text-lg text-slate-800 dark:text-white">${t.name}</h3>
+                                    <span class="bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-xs px-2 py-1 rounded-md font-medium">${t.subject}</span>
+                                    ${t.branch ? `<span class="bg-teal-50 dark:bg-teal-900/50 text-teal-600 dark:text-teal-300 text-xs px-2 py-1 rounded-md font-medium ml-1"><i class="fa-solid fa-location-dot"></i> ${t.branch}</span>` : ''}
+                                </div>
                                 <div class="flex flex-col items-end gap-2">
                                     <div class="bg-green-50 dark:bg-green-900/50 text-green-700 dark:text-green-400 text-sm font-bold px-2 py-1 rounded-lg text-center leading-tight">
                                         <span class="block">${t.share}% <span class="text-[10px] font-normal">Reg</span></span>
@@ -1669,6 +1897,7 @@
         window.renderStudents = function() {
             const list = document.getElementById('students-list'); 
             if (!list) return;
+
             list.innerHTML = '';
             let totals = { expected: 0, received: 0, pending: 0 };
             const currentMonthStr = `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}`;
@@ -1700,10 +1929,12 @@
                 if(s.studyMode === 'Online') studyModeLabel = `<span class="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1 rounded ml-1">Online</span>`;
                 else if(s.studyMode === 'Home Tuition') studyModeLabel = `<span class="text-[10px] text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-1 rounded ml-1">Home</span>`;
 
+                let branchLabel = s.branch ? `<span class="text-[10px] text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30 px-1 rounded ml-1"><i class="fa-solid fa-location-dot mr-1"></i>${s.branch}</span>` : '';
+
                 list.innerHTML += `
-                    <tr data-mode="${s.studyMode || 'Offline'}" data-std="${s.std || ''}" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
+                    <tr data-mode="${s.studyMode || 'Offline'}" data-std="${s.std || ''}" data-branch="${s.branch || 'Main Branch'}" class="hover:bg-slate-50 dark:hover:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700">
                         <td class="py-3 px-6">
-                            <p class="font-bold text-slate-800 dark:text-slate-100">${s.name} ${studyModeLabel}</p>
+                            <p class="font-bold text-slate-800 dark:text-slate-100">${s.name} ${studyModeLabel} ${branchLabel}</p>
                             <p class="text-[10px] font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 inline-block px-1 rounded mt-0.5">${[s.std, s.board, s.medium].filter(Boolean).join(' | ')}</p>
                         </td>
                         <td class="py-3 px-6 text-slate-600 dark:text-slate-400">${teacherNames}</td>
@@ -1724,21 +1955,24 @@
             const expEl = document.getElementById('std-sum-expected'); if(expEl) expEl.innerText = `₹${totals.expected}`;
             const recEl = document.getElementById('std-sum-received'); if(recEl) recEl.innerText = `₹${totals.received}`;
             const penEl = document.getElementById('std-sum-pending');  if(penEl) penEl.innerText = `₹${totals.pending}`;
+            window.filterStudentsTable();
         };
 
         // --- ACCOUNT FILTER GLOBALS & LOGIC ---
-        window.accountFilter = { start: null, end: null };
+        window.accountFilter = { start: null, end: null, branch: 'All' };
 
         window.applyAccountFilter = function() {
             window.accountFilter.start = document.getElementById('filter-start').value || null;
             window.accountFilter.end = document.getElementById('filter-end').value || null;
+            window.accountFilter.branch = document.getElementById('filter-branch-account').value || 'All';
             window.renderAccounts();
         };
 
         window.clearAccountFilter = function() {
             document.getElementById('filter-start').value = '';
             document.getElementById('filter-end').value = '';
-            window.accountFilter = { start: null, end: null };
+            document.getElementById('filter-branch-account').value = 'All';
+            window.accountFilter = { start: null, end: null, branch: 'All' };
             window.renderAccounts();
         };
 
@@ -1747,8 +1981,10 @@
             
             let csvContent = "data:text/csv;charset=utf-8,";
             const dateRangeStr = (window.accountFilter.start ? window.accountFilter.start : 'Start') + " to " + (window.accountFilter.end ? window.accountFilter.end : 'End');
-            csvContent += `Passbook Ledger (${dateRangeStr})\n\n`;
-            csvContent += "Date,Description & Mode,Credit (In),Debit (Out),Closing Balance\n";
+            const branchStr = window.accountFilter.branch || 'All';
+            
+            csvContent += `Passbook Ledger (${dateRangeStr}) | Branch Filter: ${branchStr}\n\n`;
+            csvContent += "Date,Description & Mode,Branch,Credit (In),Debit (Out),Closing Balance\n";
             
             window.filteredPassbookData.forEach(tx => {
                 const dateStr = new Date(tx.date).toLocaleDateString('en-IN');
@@ -1758,8 +1994,9 @@
                 
                 const creditStr = tx.credit > 0 ? tx.credit : '';
                 const debitStr = tx.debit > 0 ? tx.debit : '';
+                const txBranch = tx.isOpeningBalance ? '-' : (tx.branch || 'Main Branch');
                 
-                csvContent += `"${dateStr}","${desc}",${creditStr},${debitStr},${tx.balance}\n`;
+                csvContent += `"${dateStr}","${desc}","${txBranch}",${creditStr},${debitStr},${tx.balance}\n`;
             });
             
             const encodedUri = encodeURI(csvContent);
@@ -1773,23 +2010,20 @@
             const list = document.getElementById('transactions-list'); 
             if (!list) return;
             list.innerHTML = '';
-            let t = { inc: 0, exp: 0, tEarned: 0, tPaid: 0, assets: 0 };
+            
             const ledgerSet = new Set();
             
-            const chronoTx = [...window.data.transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const selectedBranch = window.accountFilter.branch || 'All';
+            const chronoTx = [...window.data.transactions]
+                .filter(tx => selectedBranch === 'All' || (tx.branch || 'Main Branch') === selectedBranch)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
             
-            // For Dashboard Cards (Unfiltered)
-            chronoTx.forEach(tx => {
-                if (tx.type === 'expense' || tx.type === 'asset') ledgerSet.add(tx.description);
-                if (tx.type === 'fee') { t.inc += tx.amount; t.tEarned += tx.teacherShare || 0; }
-                else if (tx.type === 'expense') { t.exp += tx.amount; }
-                else if (tx.type === 'teacher_payout') { t.tPaid += tx.amount; }
-                else if (tx.type === 'asset') { t.assets += tx.amount; }
-            });
-
-            // For Passbook List (Filtered)
             const startStr = window.accountFilter.start;
             const endStr = window.accountFilter.end;
+            
+            let t = { inc: 0, exp: 0, tEarned: 0, tPaid: 0, assets: 0 }; // Date Filtered P&L
+            let bs = { inc: 0, exp: 0, tEarned: 0, tPaid: 0, assets: 0 }; // Cumulative Balance Sheet
+
             let openingBalance = 0;
             let filteredTxList = [];
 
@@ -1801,11 +2035,31 @@
                 else if (tx.type === 'asset') { debit = tx.amount; }
                 
                 const txDateStr = tx.date.split('T')[0];
+                const isAfterStart = !startStr || txDateStr >= startStr;
+                const isBeforeEnd = !endStr || txDateStr <= endStr;
+                const inRange = isAfterStart && isBeforeEnd;
+
+                // BS accumulates everything up to End Date (even before Start Date)
+                if (isBeforeEnd) {
+                    if (tx.type === 'fee') { bs.inc += tx.amount; bs.tEarned += tx.teacherShare || 0; }
+                    else if (tx.type === 'expense') { bs.exp += tx.amount; }
+                    else if (tx.type === 'teacher_payout') { bs.tPaid += tx.amount; }
+                    else if (tx.type === 'asset') { bs.assets += tx.amount; }
+                }
+
+                // P&L only accumulates within Range
+                if (inRange) {
+                    if (tx.type === 'expense' || tx.type === 'asset') ledgerSet.add(tx.description);
+                    if (tx.type === 'fee') { t.inc += tx.amount; t.tEarned += tx.teacherShare || 0; }
+                    else if (tx.type === 'expense') { t.exp += tx.amount; }
+                    else if (tx.type === 'teacher_payout') { t.tPaid += tx.amount; }
+                    else if (tx.type === 'asset') { t.assets += tx.amount; }
+                }
                 
-                if(startStr && txDateStr < startStr) {
+                if (startStr && txDateStr < startStr) {
                     openingBalance += (credit - debit);
                 } else if (endStr && txDateStr > endStr) {
-                    // Skip future transactions completely
+                    // Skip future
                 } else {
                     filteredTxList.push({ ...tx, credit, debit });
                 }
@@ -1864,9 +2118,11 @@
             
             setVal('acc-income', `₹${t.inc}`); setVal('acc-exp-manual', `₹${t.exp}`);
             setVal('acc-exp-teacher', `₹${t.tEarned}`); setVal('acc-net-profit', `₹${netProfit}`);
-            setVal('bs-cash', `₹${t.inc - t.exp - t.tPaid - t.assets}`); setVal('bs-assets', `₹${t.assets}`);
-            setVal('bs-payables', `₹${t.tEarned - t.tPaid}`); setVal('bs-equity', `₹${netProfit}`);
-            setVal('bs-total', `₹${(t.inc - t.exp - t.tPaid - t.assets) + t.assets}`);
+            
+            const cumulativeNetProfit = bs.inc - (bs.exp + bs.tEarned);
+            setVal('bs-cash', `₹${bs.inc - bs.exp - bs.tPaid - bs.assets}`); setVal('bs-assets', `₹${bs.assets}`);
+            setVal('bs-payables', `₹${bs.tEarned - bs.tPaid}`); setVal('bs-equity', `₹${cumulativeNetProfit}`);
+            setVal('bs-total', `₹${(bs.inc - bs.exp - bs.tPaid - bs.assets) + bs.assets}`);
             
             const ledOpts = document.getElementById('ledger-options');
             if (ledOpts) ledOpts.innerHTML = Array.from(ledgerSet).map(l => `<option value="${l}">`).join('');
@@ -1973,16 +2229,21 @@
             if (!window.currentUser) return;
             onSnapshot(getColRef('teachers'), (snapshot) => {
                 window.data.teachers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if(window.updateBranchDropdowns) window.updateBranchDropdowns();
                 window.renderTeachers(); 
                 const select = document.getElementById('s-teacher');
                 if (select) {
                     select.innerHTML = '<option value="">Select a Teacher...</option>';
-                    window.data.teachers.forEach(t => select.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`);
+                    window.data.teachers.forEach(t => {
+                        const branchText = t.branch ? ` - ${t.branch}` : '';
+                        select.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})${branchText}</option>`;
+                    });
                 }
                 checkInitialLoading();
             }, handleDbError);
             onSnapshot(getColRef('students'), (snapshot) => {
                 window.data.students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if(window.updateBranchDropdowns) window.updateBranchDropdowns();
                 window.renderStudents(); checkInitialLoading();
             }, handleDbError);
             onSnapshot(getColRef('transactions'), (snapshot) => {
@@ -1992,6 +2253,8 @@
             onSnapshot(doc(db, getColRef('settings').path, 'global'), (docSnap) => {
                 if(docSnap.exists()) {
                     window.data.settings = docSnap.data();
+                    if(window.updateBranchDropdowns) window.updateBranchDropdowns();
+                    if(typeof window.renderSettingsBranches === 'function') window.renderSettingsBranches();
                     const setHeading = document.getElementById('setting-heading');
                     if (setHeading) setHeading.value = window.data.settings.headingText || '';
                     const setSub = document.getElementById('setting-subheading');
@@ -2120,6 +2383,80 @@
                 await setDoc(doc(db, getColRef('settings').path, 'global'), payload, {merge: true});
                 alert("Settings Saved Successfully! It will apply to all new receipts and certificates.");
             } catch(e) { alert("Error saving settings."); console.error(e); }
+        };
+
+        window.addBranch = async function() {
+            const input = document.getElementById('setting-new-branch');
+            const val = input.value.trim();
+            if(!val) return;
+            let currentBranches = window.data.settings?.branches || ['Main Branch'];
+            if(!currentBranches.includes(val)) {
+                currentBranches.push(val);
+                try {
+                    await setDoc(doc(db, 'settings', 'global'), { branches: currentBranches }, { merge: true });
+                    input.value = '';
+                } catch(e) { console.error(e); alert("Failed to add branch"); }
+            } else {
+                alert("Branch already exists");
+            }
+        };
+
+        window.removeBranch = async function(branchName, btn) {
+            if(branchName === 'Main Branch') return alert("Cannot remove 'Main Branch' as it is the default.");
+            if(!confirm(`Are you sure you want to remove '${branchName}'?\n\nThis will move all students, teachers, and transactions currently in this branch to 'Main Branch'.`)) return;
+            
+            let currentBranches = window.data.settings?.branches || ['Main Branch'];
+            currentBranches = currentBranches.filter(b => b !== branchName);
+            
+            const btnText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            try {
+                // 1. Remove from global settings
+                await setDoc(doc(db, 'settings', 'global'), { branches: currentBranches }, { merge: true });
+                
+                // 2. Migrate Students
+                const sPromises = (window.data.students || [])
+                    .filter(s => s.branch === branchName)
+                    .map(s => updateDoc(doc(db, 'students', s.id), { branch: 'Main Branch' }));
+                
+                // 3. Migrate Teachers
+                const tPromises = (window.data.teachers || [])
+                    .filter(t => t.branch === branchName)
+                    .map(t => updateDoc(doc(db, 'teachers', t.id), { branch: 'Main Branch' }));
+
+                // 4. Migrate Transactions
+                const txPromises = (window.data.transactions || [])
+                    .filter(tx => tx.branch === branchName)
+                    .map(tx => updateDoc(doc(db, 'transactions', tx.id), { branch: 'Main Branch' }));
+
+                await Promise.all([...sPromises, ...tPromises, ...txPromises]);
+
+                alert(`Branch '${branchName}' removed successfully.`);
+            } catch(e) { 
+                console.error(e); 
+                alert("Failed to remove branch properly."); 
+                btn.innerHTML = btnText;
+                btn.disabled = false;
+            }
+        };
+
+        window.renderSettingsBranches = function() {
+            const container = document.getElementById('settings-branch-list');
+            if(!container) return;
+            
+            // Unify branches across all records to display them even if not in settings map initially
+            const branchesSet = new Set(window.data.settings?.branches || ['Main Branch']);
+            (window.data.students || []).forEach(s => { if(s.branch) branchesSet.add(s.branch); });
+            (window.data.teachers || []).forEach(t => { if(t.branch) branchesSet.add(t.branch); });
+            
+            container.innerHTML = Array.from(branchesSet).map(b => `
+                <span class="inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-full text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                    ${b}
+                    <button type="button" onclick="window.removeBranch('${b}', this)" class="text-indigo-400 hover:text-red-500 ml-1 focus:outline-none transition-colors" title="Remove Branch"><i class="fa-solid fa-times"></i></button>
+                </span>
+            `).join('');
         };
 
         // ================= PDF GENERATION =================
@@ -2420,7 +2757,13 @@
             docPdf.setFont("helvetica", "bold"); docPdf.text("Mobile No:", leftCol, currentY); 
             docPdf.setFont("helvetica", "normal"); docPdf.text(mobile, leftVal, currentY);
 
-            const displayMonthName = tx.feeMonth ? new Date(tx.feeMonth + "-01").toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : 'N/A';
+            let displayMonthName = tx.feeMonth ? new Date(tx.feeMonth + "-01").toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : 'N/A';
+            if (tx.feeMonthsCount && tx.feeMonthsCount > 1 && tx.feeMonth) {
+                const endMonthDate = new Date(tx.feeMonth + "-01");
+                endMonthDate.setMonth(endMonthDate.getMonth() + (tx.feeMonthsCount - 1));
+                const endMonthName = endMonthDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+                displayMonthName = `${displayMonthName} to ${endMonthName}`;
+            }
             
             // 7. Table
             docPdf.autoTable({
@@ -2690,7 +3033,12 @@
                     paidListEl.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-slate-400">No fees paid yet.</td></tr>`;
                 } else {
                     paidTxs.forEach(tx => {
-                        const mName = tx.feeMonth ? new Date(tx.feeMonth + "-01").toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : '-';
+                        let mName = tx.feeMonth ? new Date(tx.feeMonth + "-01").toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : '-';
+                        if (tx.feeMonthsCount && tx.feeMonthsCount > 1 && tx.feeMonth) {
+                            let endD = new Date(tx.feeMonth + "-01");
+                            endD.setMonth(endD.getMonth() + (tx.feeMonthsCount - 1));
+                            mName += ' to ' + endD.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+                        }
                         paidListEl.innerHTML += `
                             <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 border-b border-slate-50 dark:border-slate-700">
                                 <td class="py-2 px-3 font-medium">${mName}</td>
@@ -2731,6 +3079,7 @@
             if(!s) return;
             document.getElementById('s-id').value = s.id;
             document.getElementById('s-name').value = s.name;
+            document.getElementById('s-branch').value = s.branch || 'Main Branch';
             document.getElementById('s-parent').value = s.parentName || '';
             document.getElementById('s-std').value = s.std || '';
             document.getElementById('s-board').value = s.board || 'State Board';
@@ -2812,6 +3161,7 @@
             if(!t) return;
             document.getElementById('t-id').value = t.id;
             document.getElementById('t-name').value = t.name;
+            document.getElementById('t-branch').value = t.branch || 'Main Branch';
             document.getElementById('t-subject').value = t.subject || '';
             document.getElementById('t-share').value = t.share || '';
             document.getElementById('t-share-home').value = t.homeShare || t.share || '';
@@ -2857,6 +3207,7 @@
             document.getElementById('pt-name').innerText = t.name;
             document.getElementById('pt-pending').innerText = `₹${pendingAmount}`;
             document.getElementById('pt-amount').value = pendingAmount;
+            document.getElementById('pt-date').value = new Date().toISOString().split('T')[0];
             
             window.openModal('modal-pay-teacher');
         };
@@ -2867,7 +3218,8 @@
             const dueData = window.calcStudentDue(s);
             
             let amt = s.monthlyFees;
-            if(dueData.pendingList.length > 0 && dueData.pendingList.length === dueData.totalMonthsSinceJoin && s.firstMonthFee) {
+            const isFirstPayment = (dueData.pendingList.length > 0 && dueData.pendingList.length === dueData.totalMonthsSinceJoin && s.firstMonthFee);
+            if(isFirstPayment) {
                 amt = s.firstMonthFee;
             }
             
@@ -2900,9 +3252,6 @@
             const profitAmt = amt - tShareAmt;
             
             document.getElementById('fee-student-name').innerText = s.name;
-            document.getElementById('fee-amount').innerText = '₹' + amt;
-            document.getElementById('fee-teacher-share').innerText = '₹' + tShareAmt;
-            document.getElementById('fee-profit').innerText = '₹' + profitAmt;
             document.getElementById('fee-student-id').value = s.id;
             
             const now = new Date();
@@ -2919,44 +3268,43 @@
             if (bankCont) bankCont.classList.add('hidden');
             const bankInp = document.getElementById('fee-bank');
             if (bankInp) bankInp.value = '';
+            const countEl = document.getElementById('fee-months-count');
+            if (countEl) countEl.value = '1';
             
             window.currentFeeProcess = {
                 studentId: s.id,
                 studentName: s.name,
+                branch: s.branch || 'Main Branch',
                 std: s.std || '',
                 whatsapp: s.whatsapp || '',
                 studyMode: s.studyMode || 'Offline',
                 teacherId: s.teacherId, 
                 teacherName: tNames.join(', ') || 'N/A',
-                teacherShares: teacherSharesMap, 
+                baseTeacherShares: teacherSharesMap, 
+                teacherShares: {...teacherSharesMap}, 
+                baseTeacherShare: tShareAmt,
                 teacherShare: tShareAmt,
+                baseProfit: profitAmt,
                 profit: profitAmt,
-                amount: amt
+                baseAmount: amt,
+                standardMonthlyFee: s.monthlyFees,
+                isFirstMonth: !!isFirstPayment,
+                amount: amt,
+                monthsCount: 1
             };
+
+            const amountInput = document.getElementById('fee-amount-input');
+            if(amountInput) amountInput.value = amt;
+            window.handleManualFeeEdit();
+
             window.openModal('modal-collect-fee');
         };
 
         // ================= MAIN FORM LOGIC =================
-        // Search & Filter Student Listeners
-        window.filterStudentsTable = function() {
-            const query = (document.getElementById('search-student')?.value || '').toLowerCase();
-            const modeFilter = document.getElementById('filter-study-mode')?.value || 'All';
-            const stdFilter = document.getElementById('filter-std')?.value || 'All';
-            const rows = document.querySelectorAll('#students-list tr');
-            rows.forEach(row => {
-                const nameCell = row.cells[0].textContent.toLowerCase();
-                const rowMode = row.getAttribute('data-mode') || 'Offline';
-                const rowStd = row.getAttribute('data-std') || '';
-                const matchesSearch = nameCell.includes(query);
-                const matchesMode = (modeFilter === 'All' || rowMode === modeFilter);
-                const matchesStd = (stdFilter === 'All' || rowStd === stdFilter);
-                row.style.display = (matchesSearch && matchesMode && matchesStd) ? '' : 'none';
-            });
-        };
-
         document.getElementById('search-student')?.addEventListener('input', window.filterStudentsTable);
         document.getElementById('filter-study-mode')?.addEventListener('change', window.filterStudentsTable);
         document.getElementById('filter-std')?.addEventListener('change', window.filterStudentsTable);
+        document.getElementById('filter-branch-student')?.addEventListener('change', window.filterStudentsTable);
 
         // Form Submit Listeners - explicitly bound to window to avoid module scope trapping
         document.getElementById('form-student')?.addEventListener('submit', async (e) => {
@@ -2974,6 +3322,7 @@
                 const payload = {
                     name: document.getElementById('s-name').value,
                     parentName: document.getElementById('s-parent').value,
+                    branch: document.getElementById('s-branch').value || 'Main Branch',
                     std: document.getElementById('s-std').value,
                     board: document.getElementById('s-board').value,
                     medium: document.getElementById('s-medium').value,
@@ -3029,6 +3378,7 @@
             const id = document.getElementById('t-id').value;
             const payload = {
                 name: document.getElementById('t-name').value,
+                branch: document.getElementById('t-branch').value || 'Main Branch',
                 subject: document.getElementById('t-subject').value,
                 share: parseFloat(document.getElementById('t-share').value),
                 homeShare: parseFloat(document.getElementById('t-share-home').value) || parseFloat(document.getElementById('t-share').value),
@@ -3049,6 +3399,7 @@
             e.preventDefault();
             const payload = {
                 type: 'expense', description: document.getElementById('e-desc').value,
+                branch: document.getElementById('e-branch').value || 'Main Branch',
                 amount: parseFloat(document.getElementById('e-amount').value),
                 paymentMode: document.getElementById('e-mode').value, date: new Date().toISOString(),
                 createdAt: serverTimestamp()
@@ -3062,6 +3413,7 @@
             e.preventDefault();
             const payload = {
                 type: 'asset', description: document.getElementById('a-desc').value,
+                branch: document.getElementById('a-branch').value || 'Main Branch',
                 amount: parseFloat(document.getElementById('a-amount').value),
                 paymentMode: document.getElementById('a-mode').value, date: new Date().toISOString(),
                 createdAt: serverTimestamp()
@@ -3076,10 +3428,16 @@
             const payMode = document.getElementById('pt-mode').value;
             const bankVal = document.getElementById('pt-bank').value;
             const fullModeStr = payMode === 'Bank/Online' || payMode === 'Bank' ? `Bank (${bankVal || 'Transfer'})` : payMode;
+            
+            const tId = document.getElementById('pt-id').value;
+            const t = window.data.teachers.find(x => x.id === tId);
+            const tBranch = t ? (t.branch || 'Main Branch') : 'Main Branch';
+            const payDate = new Date(document.getElementById('pt-date').value).toISOString();
+            
             const payload = {
-                type: 'teacher_payout', teacherId: document.getElementById('pt-id').value,
+                type: 'teacher_payout', teacherId: tId, branch: tBranch,
                 amount: parseFloat(document.getElementById('pt-amount').value),
-                paymentMode: fullModeStr, date: new Date().toISOString(), createdAt: serverTimestamp()
+                paymentMode: fullModeStr, date: payDate, createdAt: serverTimestamp()
             };
             await addDoc(collection(db, 'transactions'), payload);
             window.closeModal('modal-pay-teacher');
@@ -3117,6 +3475,20 @@
                 
                 if (!selectedMonth || !document.getElementById('fee-date').value) throw new Error("Please fill required fields");
 
+                const monthsCount = window.currentFeeProcess.monthsCount || 1;
+                const startMonthDate = new Date(selectedMonth + "-01");
+                const startMonthName = startMonthDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+                
+                let finalPaidMonthStr = selectedMonth;
+                let displayMonthName = startMonthName;
+                
+                if(monthsCount > 1) {
+                    startMonthDate.setMonth(startMonthDate.getMonth() + (monthsCount - 1));
+                    finalPaidMonthStr = `${startMonthDate.getFullYear()}-${String(startMonthDate.getMonth()+1).padStart(2,'0')}`;
+                    const endMonthName = startMonthDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+                    displayMonthName = `${startMonthName} to ${endMonthName}`;
+                }
+
                 // FY Calculation: Start in April
                 const yr = paymentDateObj.getFullYear(); 
                 const mth = paymentDateObj.getMonth() + 1;
@@ -3131,13 +3503,19 @@
                 (window.data.transactions || []).forEach(tx => {
                     if (tx.receiptNo && tx.receiptNo.startsWith(receiptPrefix)) {
                         const seqParts = tx.receiptNo.split('/');
-                        const seq = parseInt(seqParts[seqParts.length - 1]);
+                        const seq = parseInt(seqParts[seqParts.length - 1], 10);
                         if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
                     }
                 });
                 
+                // Track latest generated sequence locally to prevent duplicates on rapid entry
+                if (window.lastReceiptPrefix === receiptPrefix && window.lastReceiptSeq >= maxSeq) {
+                    maxSeq = window.lastReceiptSeq;
+                }
+                window.lastReceiptPrefix = receiptPrefix;
+                window.lastReceiptSeq = maxSeq + 1;
+                
                 const receiptNo = `${receiptPrefix}${String(maxSeq + 1).padStart(4, '0')}`;
-                const displayMonthName = new Date(selectedMonth + "-01").toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
                 // Locate Student Details for Receipt
                 const currentStudent = window.data.students.find(s=>s.id===window.currentFeeProcess.studentId);
@@ -3160,7 +3538,9 @@
                 );
 
                 const payload = {
-                    type: 'fee', feeMonth: selectedMonth, studentId: window.currentFeeProcess.studentId, studentName: window.currentFeeProcess.studentName,
+                    type: 'fee', feeMonth: selectedMonth, feeMonthsCount: monthsCount,
+                    studentId: window.currentFeeProcess.studentId, studentName: window.currentFeeProcess.studentName,
+                    branch: window.currentFeeProcess.branch,
                     amount: window.currentFeeProcess.amount, paymentMode: fullModeStr, 
                     teacherId: window.currentFeeProcess.teacherId, // Keeps array format
                     teacherShares: window.currentFeeProcess.teacherShares, // Mapped object of id -> share
@@ -3172,8 +3552,8 @@
                 try {
                     payload.createdAt = serverTimestamp();
                     await addDoc(collection(db, 'transactions'), payload);
-                    if(currentStudent && (!currentStudent.lastPaidMonth || selectedMonth > currentStudent.lastPaidMonth)) {
-                        await updateDoc(doc(db, 'students', window.currentFeeProcess.studentId), { lastPaidMonth: selectedMonth });
+                    if(currentStudent && (!currentStudent.lastPaidMonth || finalPaidMonthStr > currentStudent.lastPaidMonth)) {
+                        await updateDoc(doc(db, 'students', window.currentFeeProcess.studentId), { lastPaidMonth: finalPaidMonthStr });
                     }
                 } catch (firebaseErr) {
                     console.warn("[PAYMENT] Firebase sync failed, saved locally:", firebaseErr);
