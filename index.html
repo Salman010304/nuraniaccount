@@ -901,10 +901,10 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Monthly Fees (₹)</label>
-                    <input type="number" id="s-fees" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none" oninput="window.calculateProratedPreview()">
+                    <input type="number" id="s-fees" required class="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-white focus:ring-2 focus:ring-primary outline-none">
                 </div>
                 
-                <!-- Prorated Preview Box -->
+                <!-- Prorated Preview Box (Hidden) -->
                 <div id="prorated-box" class="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 rounded-lg p-4 hidden">
                     <p class="text-sm text-blue-800 dark:text-blue-300 font-medium"><i class="fa-solid fa-calculator mr-1"></i> Mid-Month Join Logic Applied</p>
                     <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">First month's prorated fee calculated based on remaining days: <strong id="prorated-amount" class="text-lg ml-1">₹0</strong></p>
@@ -1346,12 +1346,7 @@
             const monthsCount = parseInt(document.getElementById('fee-months-count').value) || 1;
             
             // Expected amount for selected months
-            let expectedAmount = 0;
-            if (window.currentFeeProcess.isFirstMonth) {
-                expectedAmount = window.currentFeeProcess.baseAmount + (window.currentFeeProcess.standardMonthlyFee * (monthsCount - 1));
-            } else {
-                expectedAmount = window.currentFeeProcess.standardMonthlyFee * monthsCount;
-            }
+            let expectedAmount = window.currentFeeProcess.standardMonthlyFee * monthsCount;
 
             const ratio = expectedAmount > 0 ? (newAmount / expectedAmount) : 1;
             
@@ -1368,12 +1363,7 @@
                     const t = (window.data.teachers || []).find(x => x.id === tid);
                     if (t) {
                         const tSharePct = window.currentFeeProcess.studyMode === 'Home Tuition' ? (t.homeShare || t.share) : t.share;
-                        let shareForThisTeacher = 0;
-                        if (window.currentFeeProcess.isFirstMonth) {
-                            shareForThisTeacher = (window.currentFeeProcess.baseAmount * tSharePct / 100) + ((window.currentFeeProcess.standardMonthlyFee * (monthsCount - 1)) * tSharePct / 100);
-                        } else {
-                            shareForThisTeacher = expectedAmount * tSharePct / 100;
-                        }
+                        let shareForThisTeacher = expectedAmount * tSharePct / 100;
                         
                         // Handle multiple teachers split
                         if (Array.isArray(window.currentFeeProcess.teacherId) && window.currentFeeProcess.teacherId.length > 0) {
@@ -1409,12 +1399,7 @@
             if(!window.currentFeeProcess) return;
             const monthsCount = parseInt(document.getElementById('fee-months-count').value) || 1;
             
-            let newAmount = 0;
-            if (window.currentFeeProcess.isFirstMonth) {
-                newAmount = window.currentFeeProcess.baseAmount + (window.currentFeeProcess.standardMonthlyFee * (monthsCount - 1));
-            } else {
-                newAmount = window.currentFeeProcess.standardMonthlyFee * monthsCount;
-            }
+            let newAmount = window.currentFeeProcess.standardMonthlyFee * monthsCount;
             
             const amountInput = document.getElementById('fee-amount-input');
             if(amountInput) amountInput.value = newAmount;
@@ -1447,28 +1432,15 @@
             
             let dueAmt = 0;
             pendingMonthsList.forEach((pm, idx) => {
-                if(idx === 0 && !paidMonths.length && s.firstMonthFee) { dueAmt += s.firstMonthFee; } 
-                else { dueAmt += s.monthlyFees; }
+                dueAmt += s.monthlyFees;
             });
 
             return { amt: dueAmt, months: pendingMonthsList.length, pendingList: pendingMonthsList, totalMonthsSinceJoin: allMonthsSinceJoin.length };
         };
 
         window.calculateProratedPreview = function() {
-            const dateStr = document.getElementById('s-joindate')?.value;
             const fees = parseFloat(document.getElementById('s-fees')?.value);
             const box = document.getElementById('prorated-box');
-            if(dateStr && fees) {
-                const joinDate = new Date(dateStr);
-                if(joinDate.getDate() > 5) {
-                    const daysInMonth = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 0).getDate();
-                    const proratedFee = Math.round((fees / daysInMonth) * (daysInMonth - joinDate.getDate() + 1));
-                    const pAmt = document.getElementById('prorated-amount');
-                    if(pAmt) pAmt.innerText = `₹${proratedFee}`;
-                    if(box) box.classList.remove('hidden'); 
-                    return proratedFee;
-                }
-            }
             if(box) box.classList.add('hidden'); 
             return fees || 0;
         };
@@ -1916,7 +1888,7 @@
                 const isPaidCurrent = s.lastPaidMonth >= currentMonthStr; 
                 
                 if (s.status === 'active') {
-                    const feeAmt = s.lastPaidMonth === '' ? (s.firstMonthFee || s.monthlyFees) : s.monthlyFees;
+                    const feeAmt = s.monthlyFees;
                     totals.expected += feeAmt;
                     if (isPaidCurrent && dueData.months === 0) { totals.received += feeAmt; } 
                     totals.pending += dueData.amt;
@@ -3063,7 +3035,6 @@
                     dueData.pendingList.forEach((pm, idx) => {
                         const mName = new Date(pm + "-01").toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
                         let amt = s.monthlyFees;
-                        if(idx === 0 && dueData.pendingList.length === dueData.totalMonthsSinceJoin && s.firstMonthFee) amt = s.firstMonthFee; 
                         penListEl.innerHTML += `<li class="flex justify-between items-center bg-white dark:bg-slate-800 px-3 py-2 rounded border border-red-100 dark:border-red-800"><span class="font-medium text-slate-700 dark:text-slate-300">${mName}</span> <span class="font-bold text-red-600 dark:text-red-400">₹${amt}</span></li>`;
                     });
                 }
@@ -3218,10 +3189,6 @@
             const dueData = window.calcStudentDue(s);
             
             let amt = s.monthlyFees;
-            const isFirstPayment = (dueData.pendingList.length > 0 && dueData.pendingList.length === dueData.totalMonthsSinceJoin && s.firstMonthFee);
-            if(isFirstPayment) {
-                amt = s.firstMonthFee;
-            }
             
             let tShareAmt = 0;
             let teacherSharesMap = {};
@@ -3288,7 +3255,7 @@
                 profit: profitAmt,
                 baseAmount: amt,
                 standardMonthlyFee: s.monthlyFees,
-                isFirstMonth: !!isFirstPayment,
+                isFirstMonth: false,
                 amount: amt,
                 monthsCount: 1
             };
@@ -3339,7 +3306,7 @@
                     await updateDoc(doc(db, 'students', id), payload);
                 } else {
                     payload.createdAt = serverTimestamp();
-                    payload.firstMonthFee = window.calculateProratedPreview ? window.calculateProratedPreview() : payload.monthlyFees;
+                    payload.firstMonthFee = payload.monthlyFees; // Fixed amount for first month
                     payload.lastPaidMonth = '';
                     await addDoc(collection(db, 'students'), payload);
                 }
