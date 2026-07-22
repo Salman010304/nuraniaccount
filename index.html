@@ -828,19 +828,31 @@
                         const canvas = document.createElement('canvas');
                         let width = img.width;
                         let height = img.height;
-                        const MAX_WIDTH = 1000;
-                        const MAX_HEIGHT = 1000;
                         
-                        if (width > height) {
-                            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        // Force exact 512x512 square crop specifically for PWA App Icons
+                        if (type === 'appIconUrl') {
+                            const size = Math.min(width, height);
+                            canvas.width = 512;
+                            canvas.height = 512;
+                            const ctx = canvas.getContext('2d');
+                            const sx = (width - size) / 2;
+                            const sy = (height - size) / 2;
+                            ctx.drawImage(img, sx, sy, size, size, 0, 0, 512, 512);
                         } else {
-                            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                            const MAX_WIDTH = 1000;
+                            const MAX_HEIGHT = 1000;
+                            if (width > height) {
+                                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                            } else {
+                                if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                            }
+                            canvas.width = width; canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
                         }
                         
-                        canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                        // Use slightly higher quality for App Icons
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', type === 'appIconUrl' ? 0.9 : 0.7);
 
                         if (studentId) {
                             const std = state.students.find(s => s.id === studentId);
@@ -1183,12 +1195,15 @@
             const appleIcon = document.getElementById('apple-icon');
             if (appleIcon) appleIcon.href = state.appIconUrl;
 
+            const iconType = state.appIconUrl.startsWith('data:image/svg') ? "image/svg+xml" : "image/jpeg";
+
             const manifest = {
                 name: "UVA ERP", short_name: "UVA", description: "Udaan Vibrant Academy ERP",
                 start_url: window.location.href.split('?')[0], display: "standalone", background_color: "#f8fafc", theme_color: "#0f172a",
                 icons: [
-                    { src: state.appIconUrl, sizes: "192x192", type: "image/svg+xml", purpose: "any maskable" },
-                    { src: state.appIconUrl, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
+                    { src: state.appIconUrl, sizes: "192x192", type: iconType, purpose: "any maskable" },
+                    { src: state.appIconUrl, sizes: "512x512", type: iconType, purpose: "any maskable" },
+                    { src: state.appIconUrl, sizes: "any", type: iconType, purpose: "any maskable" }
                 ]
             };
             
